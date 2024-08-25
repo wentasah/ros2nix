@@ -79,7 +79,24 @@
         "nixpkgs": [
           "nix-ros-overlay",
           "nixpkgs"
-        ]
+        ],
+        "rosdistro": "rosdistro"
+      }
+    },
+    "rosdistro": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1724605071,
+        "narHash": "sha256-Aj43AvXYn8etRXhyDc1RwJXV0g37NilmduevcYrcaZY=",
+        "owner": "ros",
+        "repo": "rosdistro",
+        "rev": "bab0a532400c16d89606a8c7fb450f26e6028745",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ros",
+        "repo": "rosdistro",
+        "type": "github"
       }
     },
     "systems": {

@@ -12,7 +12,7 @@ from rosinstall_generator.distro import get_distro
 from superflore.PackageMetadata import PackageMetadata
 from superflore.exceptions import UnresolvedDependency
 from superflore.generators.nix.nix_package import NixPackage
-from nix_expression import NixExpression, NixLicense
+from .nix_expression import NixExpression, NixLicense
 from superflore.utils import (download_file, get_distro_condition_context,
                               get_distros, get_pkg_version, info, resolve_dep,
                               retry_on_exception, warn)
@@ -59,7 +59,7 @@ def get_output_file_name(pkg, args):
 
     return os.path.join(args.output_dir, fn)
 
-def main(args):
+def ros2nix(args):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("source", nargs="+", help="Path to package.xml") # TODO or a directory containing package.xml or an ")
 
@@ -170,7 +170,9 @@ def main(args):
             err("Failed to write derivation to disk!")
             raise e
 
+def main():
+    import sys
+    ros2nix(sys.argv[1:])
 
 if __name__ == '__main__':
-    import sys
-    main(sys.argv[1:])
+    main()
