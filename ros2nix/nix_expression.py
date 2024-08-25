@@ -26,7 +26,7 @@ from operator import attrgetter
 import os
 from textwrap import dedent
 from time import gmtime, strftime
-from typing import Iterable, Set
+from typing import Iterable, Set, Optional
 import urllib.parse
 
 from superflore.utils import get_license
@@ -85,7 +85,6 @@ class NixLicense:
 
 class NixExpression:
     def __init__(self, name: str, version: str,
-                 src_url: str, src_sha256: str,
                  description: str, licenses: Iterable[NixLicense],
                  distro_name: str,
                  build_type: str,
@@ -93,15 +92,20 @@ class NixExpression:
                  propagated_build_inputs: Set[str] = set(),
                  check_inputs: Set[str] = set(),
                  native_build_inputs: Set[str] = set(),
-                 propagated_native_build_inputs: Set[str] = set()
+                 propagated_native_build_inputs: Set[str] = set(),
+                 src_param: Optional[str] = None,
+                 src_url: Optional[str] = None, src_sha256: Optional[str] = None,
+                 source_root: Optional[str] = None,
                  ) -> None:
         self.name = name
         self.version = version
         self.src_url = src_url
         self.src_sha256 = src_sha256
+        self.src_param = src_param
         # fetchurl's naming logic cannot account for URL parameters
         self.src_name = os.path.basename(
             urllib.parse.urlparse(self.src_url).path)
+        self.source_root = source_root
 
         self.description = description
         self.licenses = licenses
@@ -123,50 +127,64 @@ class NixExpression:
     def _to_nix_parameter(dep: str) -> str:
         return dep.split('.')[0]
 
-    def get_text(self, distributor: str, license_name: str) -> str:
+    def get_text(self, distributor: Optional[str], license_name: Optional[str]) -> str:
         """
         Generate the Nix expression, given the distributor line
         and the license text.
         """
 
         ret = []
-        ret += dedent('''
-        # Copyright {} {}
-        # Distributed under the terms of the {} license
 
-        ''').format(
-            strftime("%Y", gmtime()), distributor,
-            license_name)
+        if distributor or license_name:
+            ret += dedent('''
+            # Copyright {} {}
+            # Distributed under the terms of the {} license
 
-        ret += '{ lib, buildRosPackage, fetchurl, ' + \
-               ', '.join(sorted(set(map(self._to_nix_parameter,
-                                        self.build_inputs |
-                                        self.propagated_build_inputs |
-                                        self.check_inputs |
-                                        self.native_build_inputs |
-                                        self.propagated_native_build_inputs)))
-                         ) + ' }:'
+            ''').format(
+                strftime("%Y", gmtime()), distributor,
+                license_name)
+
+        args = [ "lib", "buildRosPackage" ]
+
+        assert bool(self.src_url or self.src_name or self.src_sha256) ^ bool(self.src_param)
+
+        if self.src_param:
+            src = self.src_param
+            args.append(self.src_param)
+        else:
+            src = f'''fetchurl {{
+                url = "{self.src_url}";
+                name = "{self.src_name}";
+                sha256 = "{self.src_sha256}";
+              }}'''
+            args.append("fetchurl")
+
+        args.extend(sorted(set(map(self._to_nix_parameter,
+                                   self.build_inputs |
+                                   self.propagated_build_inputs |
+                                   self.check_inputs |
+                                   self.native_build_inputs |
+                                   self.propagated_native_build_inputs))))
+        ret += '{ ' + ', '.join(args) + ' }:'
+
 
         ret += dedent('''
         buildRosPackage {{
           pname = "ros-{distro_name}-{name}";
           version = "{version}";
 
-          src = fetchurl {{
-            url = "{src_url}";
-            name = "{src_name}";
-            sha256 = "{src_sha256}";
-          }};
+          src = {src};
 
           buildType = "{build_type}";
         ''').format(
             distro_name=self.distro_name,
             name=self.name,
             version=self.version,
-            src_url=self.src_url,
-            src_name=self.src_name,
-            src_sha256=self.src_sha256,
+            src=src,
             build_type=self.build_type)
+
+        if self.source_root:
+            ret += f'  sourceRoot = "{self.source_root}";\n'
 
         if self.build_inputs:
             ret += "  buildInputs = {};\n" \
