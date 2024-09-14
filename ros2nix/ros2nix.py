@@ -63,14 +63,15 @@ def get_output_file_name(source: str, pkg: Package, args):
     return os.path.join(dir, fn)
 
 def generate_overlay(expressions: dict[str, str], args):
-    with open("overlay.nix", "w") as f:
+    with open(f'{args.output_dir or "."}/overlay.nix', "w") as f:
         print("self: super:\n{", file=f)
         for pkg in sorted(expressions):
-            print(f"  {pkg} = super.callPackage {expressions[pkg]} {{}};", file=f)
+            expr = expressions[pkg] if args.output_dir is None else f"./{os.path.basename(expressions[pkg])}"
+            print(f"  {pkg} = super.callPackage {expr} {{}};", file=f)
         print("}", file=f)
 
 def generate_default(args):
-    with open("default.nix", "w") as f:
+    with open(f'{args.output_dir or "."}/default.nix', "w") as f:
         f.write('''{
   nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
 }:
@@ -215,7 +216,7 @@ def ros2nix(args):
                 if args.output_dir is None:
                     kwargs["src_expr"] = "./."
                 else:
-                    kwargs["src_expr"] = f"./{os.path.dirname(source)}"
+                    kwargs["src_expr"] = f"./{os.path.relpath(os.path.dirname(source), args.output_dir)}"
 
             if args.source_root:
                 kwargs["source_root"] = args.source_root.replace('{package_name}', pkg.name)
