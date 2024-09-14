@@ -23,11 +23,9 @@
 # IN THE SOFTWARE.
 #
 from operator import attrgetter
-import os
-from textwrap import dedent
+from textwrap import dedent, indent
 from time import gmtime, strftime
 from typing import Iterable, Set, Optional
-import urllib.parse
 
 from superflore.utils import get_license
 
@@ -88,23 +86,19 @@ class NixExpression:
                  description: str, licenses: Iterable[NixLicense],
                  distro_name: str,
                  build_type: str,
+                 src_expr: str,
                  build_inputs: Set[str] = set(),
                  propagated_build_inputs: Set[str] = set(),
                  check_inputs: Set[str] = set(),
                  native_build_inputs: Set[str] = set(),
                  propagated_native_build_inputs: Set[str] = set(),
                  src_param: Optional[str] = None,
-                 src_url: Optional[str] = None, src_sha256: Optional[str] = None,
                  source_root: Optional[str] = None,
                  ) -> None:
         self.name = name
         self.version = version
-        self.src_url = src_url
-        self.src_sha256 = src_sha256
         self.src_param = src_param
-        # fetchurl's naming logic cannot account for URL parameters
-        self.src_name = os.path.basename(
-            urllib.parse.urlparse(self.src_url).path)
+        self.src_expr = src_expr
         self.source_root = source_root
 
         self.description = description
@@ -146,18 +140,9 @@ class NixExpression:
 
         args = [ "lib", "buildRosPackage" ]
 
-        assert bool(self.src_url or self.src_name or self.src_sha256) ^ bool(self.src_param)
-
         if self.src_param:
-            src = self.src_param
             args.append(self.src_param)
-        else:
-            src = f'''fetchurl {{
-                url = "{self.src_url}";
-                name = "{self.src_name}";
-                sha256 = "{self.src_sha256}";
-              }}'''
-            args.append("fetchurl")
+        src = indent(self.src_expr, "  ").strip()
 
         args.extend(sorted(set(map(self._to_nix_parameter,
                                    self.build_inputs |
@@ -167,9 +152,8 @@ class NixExpression:
                                    self.propagated_native_build_inputs))))
         ret += '{ ' + ', '.join(args) + ' }:'
 
-
         ret += dedent('''
-        buildRosPackage {{
+        buildRosPackage rec {{
           pname = "ros-{distro_name}-{name}";
           version = "{version}";
 
