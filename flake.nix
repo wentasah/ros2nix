@@ -4,6 +4,7 @@
   inputs.nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/master";
   inputs.nixpkgs.follows = "nix-ros-overlay/nixpkgs";
   inputs.rosdistro = { url = "github:ros/rosdistro"; flake = false; };
+  inputs.flake-compat.url = "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz";
 
   outputs =
     { nixpkgs, flake-utils, nix-ros-overlay, ... } @ inputs:
