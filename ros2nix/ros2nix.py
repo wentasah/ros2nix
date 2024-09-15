@@ -121,18 +121,19 @@ def generate_flake(args):
             rosDistroOverlays
           ];
         };
+''' + f'''
+        rosDistro = "{args.distro}";
+''' + '''
       in {
         legacyPackages = pkgs.rosPackages;
-''' + f'''
-        packages = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.{args.distro};
-        checks = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.{args.distro};
-''' + '''
+        packages = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.${rosDistro};
+        checks = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.${rosDistro};
         devShells.default = pkgs.mkShell {
           name = "Example project";
           packages = [
             pkgs.colcon
             # ... other non-ROS packages
-            (with pkgs.rosPackages.humble; buildEnv {
+            (with pkgs.rosPackages.${rosDistro}; buildEnv {
               paths = [
                 ros-core
                 # ... other ROS packages
@@ -146,7 +147,7 @@ def generate_flake(args):
     extra-trusted-public-keys = [ "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=" ];
   };
 }
-'''.strip())
+''')
 
 
 def ros2nix(args):
