@@ -70,8 +70,8 @@
             superflore
           ];
           makeWrapperArgs = [
-            "--set-default ROS_HOME ${rosdep-cache}"
-            "--set-default ROSDEP_SOURCE_PATH ${rosdistro}/rosdep/sources.list.d"
+            "--set ROS_HOME ${rosdep-cache}"
+            "--set ROSDEP_SOURCE_PATH ${rosdistro}/rosdep/sources.list.d"
             "--set ROSDISTRO_INDEX_URL file://${rosdistro}/index-v4.yaml"
             "--set ROS_OS_OVERRIDE nixos"
           ];
