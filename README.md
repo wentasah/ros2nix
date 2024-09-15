@@ -12,7 +12,11 @@ reasonably well.
 usage: ros2nix [-h]
                [--output OUTPUT | --output-as-ros-pkg-name | --output-as-nix-pkg-name]
                [--output-dir OUTPUT_DIR] [--fetch] [--distro DISTRO]
-               [--src-param SRC_PARAM] [--source-root SOURCE_ROOT] [--flake]
+               [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
+               [--extra-build-inputs DEP1,DEP2,...]
+               [--extra-propagated-build-inputs DEP1,DEP2,...]
+               [--extra-check-inputs DEP1,DEP2,...]
+               [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
                [--nixfmt] [--copyright-holder COPYRIGHT_HOLDER]
                [--license LICENSE]
                source [source ...]
@@ -53,9 +57,21 @@ options:
                         Set sourceRoot attribute value in the generated Nix
                         expression. Substring '{package_name}' gets replaced
                         with the package name. (default: None)
+  --extra-build-inputs DEP1,DEP2,...
+                        Additional dependencies to add to the generated Nix
+                        expressions (default: [])
+  --extra-propagated-build-inputs DEP1,DEP2,...
+                        Additional dependencies to add to the generated Nix
+                        expressions (default: [])
+  --extra-check-inputs DEP1,DEP2,...
+                        Additional dependencies to add to the generated Nix
+                        expressions (default: [])
+  --extra-native-build-inputs DEP1,DEP2,...
+                        Additional dependencies to add to the generated Nix
+                        expressions (default: [])
   --flake               Generate top-level flake.nix instead of default.nix.
                         Use with --fetch if some package.xml files are outside
-                        of the flake repo. (default: False)
+                        of the flake repo (default: False)
   --nixfmt              Format the resulting expressions with nixfmt (default:
                         False)
   --copyright-holder COPYRIGHT_HOLDER

@@ -150,6 +150,10 @@ def generate_flake(args):
 ''')
 
 
+def comma_separated(arg: str) -> list[str]:
+    return [i.strip() for i in arg.split(",")]
+
+
 def ros2nix(args):
     parser = argparse.ArgumentParser(
         prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -201,10 +205,27 @@ def ros2nix(args):
     )
 
     parser.add_argument(
+        "--extra-build-inputs", type=comma_separated, metavar="DEP1,DEP2,...", default=[],
+        help="Additional dependencies to add to the generated Nix expressions",
+    )
+    parser.add_argument(
+        "--extra-propagated-build-inputs", type=comma_separated, metavar="DEP1,DEP2,...", default=[],
+        help="Additional dependencies to add to the generated Nix expressions",
+    )
+    parser.add_argument(
+        "--extra-check-inputs", type=comma_separated, metavar="DEP1,DEP2,...", default=[],
+        help="Additional dependencies to add to the generated Nix expressions",
+    )
+    parser.add_argument(
+        "--extra-native-build-inputs", type=comma_separated, metavar="DEP1,DEP2,...", default=[],
+        help="Additional dependencies to add to the generated Nix expressions",
+    )
+
+    parser.add_argument(
         "--flake",
         action="store_true",
         help="Generate top-level flake.nix instead of default.nix. "
-        "Use with --fetch if some package.xml files are outside of the flake repo.",
+        "Use with --fetch if some package.xml files are outside of the flake repo",
     )
     parser.add_argument(
         "--nixfmt",
@@ -326,10 +347,10 @@ def ros2nix(args):
                 licenses=map(NixLicense, pkg.licenses),
                 distro_name=args.distro,
                 build_type=pkg.get_build_type(),
-                build_inputs=build_inputs,
-                propagated_build_inputs=propagated_build_inputs,
-                check_inputs=check_inputs,
-                native_build_inputs=native_build_inputs,
+                build_inputs=build_inputs | set(args.extra_build_inputs),
+                propagated_build_inputs=propagated_build_inputs | set(args.extra_propagated_build_inputs),
+                check_inputs=check_inputs | set(args.extra_check_inputs),
+                native_build_inputs=native_build_inputs | set(args.extra_native_build_inputs),
                 **kwargs,
             )
 
