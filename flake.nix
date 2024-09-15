@@ -1,5 +1,5 @@
 {
-  description = "A basic flake with a shell";
+  description = "Tool to convert ROS package.xml to Nix expressions compatible with nix-ros-overlay";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/master";
   inputs.nixpkgs.follows = "nix-ros-overlay/nixpkgs";
@@ -62,9 +62,11 @@
           nativeBuildInputs = with pkgs.python3Packages; [
             setuptools
           ];
-          propagatedBuildInputs = [
-            pkgs.superflore
-            pkgs.nixfmt-rfc-style
+          propagatedBuildInputs = with pkgs; [
+            git
+            nix-prefetch-git
+            nixfmt-rfc-style
+            superflore
           ];
           makeWrapperArgs = [
             "--set-default ROS_HOME ${rosdep-cache}"
@@ -75,11 +77,10 @@
       {
         devShells.default = pkgs.mkShell {
           inputsFrom = [
+            ros2nix
           ];
           packages = [
             pkgs.bashInteractive
-            pkgs.superflore
-            pkgs.python3Packages.rosdep
             pkgs.python3Packages.flake8
             pkgs.python3Packages.flake8-bugbear
           ];
