@@ -286,7 +286,7 @@ def ros2nix(args):
                     )
                     git_cache[toplevel] = info
 
-                match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git)?$", url)
+                match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
                 if match is not None:
                     kwargs["src_param"] = "fetchFromGitHub"
                     kwargs["src_expr"] = dedent(f'''
