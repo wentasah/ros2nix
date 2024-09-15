@@ -3,14 +3,6 @@
 # Copyright 2019-2024 Ben Wolsieffer <benwolsieffer@gmail.com>
 # Copyright 2024 Michal Sojka <michal.sojka@cvut.cz>
 
-from .nix_expression import NixExpression, NixLicense
-from catkin_pkg.package import parse_package_string, Package
-from superflore.exceptions import UnresolvedDependency
-from superflore.generators.nix.nix_package import NixPackage
-from superflore.utils import err, ok, warn
-from superflore.utils import resolve_dep
-from textwrap import dedent, indent
-from typing import Iterable, Set
 import argparse
 import itertools
 import json
@@ -18,6 +10,16 @@ import os
 import re
 import subprocess
 import sys
+from contextlib import contextmanager
+from textwrap import dedent, indent
+from typing import Iterable, Set
+
+from catkin_pkg.package import Package, parse_package_string
+from superflore.exceptions import UnresolvedDependency
+from superflore.generators.nix.nix_package import NixPackage
+from superflore.utils import err, ok, resolve_dep, warn
+
+from .nix_expression import NixExpression, NixLicense
 
 
 def resolve_dependencies(deps: Iterable[str]) -> Set[str]:
