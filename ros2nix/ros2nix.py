@@ -162,8 +162,8 @@ def ros2nix(args):
     parser.add_argument("--output-dir", help="Directory to generate output files in (by default, files are stored next to their corresponding package.xml)")
 
     parser.add_argument("--fetch", action="store_true", help="Use fetches like fetchFromGitHub for src attribute. "
-                       "The fetch function and its parameters are determined from the local git work tree."
-                       "sourceRoot is set if needed and not overridden by --source-root.")
+                        "The fetch function and its parameters are determined from the local git work tree."
+                        "sourceRoot attribute is set if needed and not overridden by --source-root.")
     parser.add_argument(
         "--distro",
         default="rolling",
@@ -255,7 +255,7 @@ def ros2nix(args):
 
                 match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git)?$", url)
                 if match is not None:
-                    kwargs["src_param"] = "fetchFromGitHub";
+                    kwargs["src_param"] = "fetchFromGitHub"
                     kwargs["src_expr"] = dedent(f'''
                       fetchFromGitHub {{
                         owner = "{match["owner"]}";
@@ -264,7 +264,7 @@ def ros2nix(args):
                         sha256 = "{info["sha256"]}";
                       }}''').strip()
                 else:
-                    kwargs["src_param"] = "fetchgit";
+                    kwargs["src_param"] = "fetchgit"
                     kwargs["src_expr"] = dedent(f'''
                       fetchgit {{
                         url = "{url}";
@@ -273,8 +273,8 @@ def ros2nix(args):
                       }}''').strip()
 
                 if prefix:
-                    #kwargs["src_expr"] = f'''let fullSrc = {kwargs["src_expr"]}; in "${{fullSrc}}/{prefix}"'''
-                    kwargs["source_root"] = f"${{src.name}}/{prefix}";
+                    # kwargs["src_expr"] = f'''let fullSrc = {kwargs["src_expr"]}; in "${{fullSrc}}/{prefix}"'''
+                    kwargs["source_root"] = f"${{src.name}}/{prefix}"
 
             else:
                 if args.output_dir is None:
