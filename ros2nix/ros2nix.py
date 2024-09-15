@@ -3,51 +3,46 @@
 # Copyright 2019-2024 Ben Wolsieffer <benwolsieffer@gmail.com>
 # Copyright 2024 Michal Sojka <michal.sojka@cvut.cz>
 
-import os
-import argparse
-import itertools
-import subprocess
-from textwrap import dedent, indent
+from .nix_expression import NixExpression, NixLicense
 from catkin_pkg.package import parse_package_string, Package
-from rosinstall_generator.distro import get_distro
-from superflore.PackageMetadata import PackageMetadata
 from superflore.exceptions import UnresolvedDependency
 from superflore.generators.nix.nix_package import NixPackage
-from .nix_expression import NixExpression, NixLicense
-from superflore.utils import (download_file, get_distro_condition_context,
-                              get_distros, get_pkg_version, info, resolve_dep,
-                              retry_on_exception, warn)
-from typing import Dict, Iterable, Set, reveal_type
-from superflore.utils import err
-from superflore.utils import ok
-from superflore.utils import warn
-import urllib.parse
-import re
+from superflore.utils import err, ok, warn
+from superflore.utils import resolve_dep
+from textwrap import dedent
+from typing import Iterable, Set
+import argparse
+import itertools
 import json
+import os
+import re
+import subprocess
+
 
 def resolve_dependencies(deps: Iterable[str]) -> Set[str]:
-    return set(itertools.chain.from_iterable(
-        map(resolve_dependency, deps)))
+    return set(itertools.chain.from_iterable(map(resolve_dependency, deps)))
+
 
 def resolve_dependency(d: str) -> Iterable[str]:
     try:
         # Try resolving as system dependency via rosdep
-        return resolve_dep(d, 'nix')[0]
+        return resolve_dep(d, "nix")[0]
     except UnresolvedDependency:
         # Assume ROS or 3rd-party package
         return (NixPackage.normalize_name(d),)
 
+
 # Adapted from rosdistro.dependency_walker.DependencyWalker._get_dependencies()
 def get_dependencies_as_set(pkg, dep_type):
     deps = {
-        'build': pkg.build_depends,
-        'buildtool': pkg.buildtool_depends,
-        'build_export': pkg.build_export_depends,
-        'buildtool_export': pkg.buildtool_export_depends,
-        'exec': pkg.exec_depends,
-        'run': pkg.run_depends,
-        'test': pkg.test_depends,
-        'doc': pkg.doc_depends,
+        "build": pkg.build_depends,
+        "buildtool": pkg.buildtool_depends,
+        "build_export": pkg.build_export_depends,
+        "buildtool_export": pkg.buildtool_export_depends,
+        "exec": pkg.exec_depends,
+        "run": pkg.run_depends,
+        "test": pkg.test_depends,
+        "doc": pkg.doc_depends,
     }
     return set([d.name for d in deps[dep_type] if d.evaluated_condition is not False])
 
@@ -62,13 +57,19 @@ def get_output_file_name(source: str, pkg: Package, args):
     dir = args.output_dir if args.output_dir is not None else os.path.dirname(source)
     return os.path.join(dir, fn)
 
+
 def generate_overlay(expressions: dict[str, str], args):
     with open(f'{args.output_dir or "."}/overlay.nix', "w") as f:
         print("self: super:\n{", file=f)
         for pkg in sorted(expressions):
-            expr = expressions[pkg] if args.output_dir is None else f"./{os.path.basename(expressions[pkg])}"
+            expr = (
+                expressions[pkg]
+                if args.output_dir is None
+                else f"./{os.path.basename(expressions[pkg])}"
+            )
             print(f"  {pkg} = super.callPackage {expr} {{}};", file=f)
         print("}", file=f)
+
 
 def generate_default(args):
     with open(f'{args.output_dir or "."}/default.nix', "w") as f:
@@ -92,14 +93,18 @@ import nix-ros-overlay {
 }
 ''')
 
+
 def generate_flake(args):
     with open(f'{args.output_dir or "."}/flake.nix', "w") as f:
         f.write('''
 TODO
 ''')
 
+
 def ros2nix(args):
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument("source", nargs="+", help="Path to package.xml")
 
     group = parser.add_mutually_exclusive_group()
@@ -239,21 +244,19 @@ def ros2nix(args):
                 build_inputs=build_inputs,
                 propagated_build_inputs=propagated_build_inputs,
                 check_inputs=check_inputs,
-                native_build_inputs=native_build_inputs, **kwargs)
+                native_build_inputs=native_build_inputs,
+                **kwargs,
+            )
 
         except Exception as e:
-            err('Failed to generate derivation for package {}!'.format(pkg))
+            err('Failed to prepare Nix expression for package {}!'.format(pkg))
             raise e
 
         try:
             derivation_text = derivation.get_text(args.copyright_holder, args.license)
-        except UnresolvedDependency:
-            err("'Failed to resolve required dependencies for package {}!"
-                .format(pkg))
-            unresolved = unresolved_dependencies
-            for dep in unresolved:
-                err(" unresolved: \"{}\"".format(dep))
-            return None, unresolved, None
+        except UnresolvedDependency as e:
+            err(f"Failed to resolve required dependencies for package {pkg}!")
+            raise e
         except Exception as e:
             err('Failed to generate derivation for package {}!'.format(pkg))
             raise e
@@ -280,9 +283,11 @@ def ros2nix(args):
     else:
         generate_default(args)
 
+
 def main():
     import sys
     ros2nix(sys.argv[1:])
+
 
 if __name__ == '__main__':
     main()

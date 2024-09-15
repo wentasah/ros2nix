@@ -80,6 +80,8 @@
             pkgs.bashInteractive
             pkgs.superflore
             pkgs.python3Packages.rosdep
+            pkgs.python3Packages.flake8
+            pkgs.python3Packages.flake8-bugbear
           ];
           ROSDEP_SOURCE_PATH = "${rosdistro}/rosdep/sources.list.d";
           ROSDISTRO_INDEX_URL = "file://${rosdistro}/index-v4.yaml";
