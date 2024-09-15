@@ -150,38 +150,70 @@ def generate_flake(args):
 
 def ros2nix(args):
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("source", nargs="+", help="Path to package.xml")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--output", default="package.nix", help="Output filename")
-    group.add_argument("--output-as-ros-pkg-name", action="store_true", help="Name output file based on ROS package name, e.g., package_name.nix. Implies --output-dir=.")
-    group.add_argument("--output-as-nix-pkg-name", action="store_true", help="Name output file based on Nix package name, e.g., package-name.nix. Implies --output-dir=.")
+    group.add_argument(
+        "--output-as-ros-pkg-name",
+        action="store_true",
+        help="Name output files based on ROS package name, e.g., package_name.nix. Implies --output-dir=.",
+    )
+    group.add_argument(
+        "--output-as-nix-pkg-name",
+        action="store_true",
+        help="Name output files based on Nix package name, e.g., package-name.nix. Implies --output-dir=.",
+    )
 
-    parser.add_argument("--output-dir", help="Directory to generate output files in (by default, files are stored next to their corresponding package.xml)")
+    parser.add_argument(
+        "--output-dir",
+        help="Directory to generate output files in. "
+        "By default, package files are stored next to their corresponding package.xml, "
+        "top-level files like overlay.nix in the current directory)",
+    )
 
-    parser.add_argument("--fetch", action="store_true", help="Use fetches like fetchFromGitHub for src attribute. "
-                        "The fetch function and its parameters are determined from the local git work tree."
-                        "sourceRoot attribute is set if needed and not overridden by --source-root.")
+    parser.add_argument(
+        "--fetch",
+        action="store_true",
+        help="Use fetches like fetchFromGitHub in src attribute values. "
+        "The fetch function and its parameters are determined from the local git work tree. "
+        "sourceRoot attribute is set if needed and not overridden by --source-root.",
+    )
     parser.add_argument(
         "--distro",
         default="rolling",
         help="ROS distro (used as a context for evaluation of conditions "
-        "in package.xml, in the name of the Nix expression and in flake.nix.)",
+        "in package.xml, in the name of the Nix expression and in flake.nix). "
+        "Note that the generated Nix expression can be used with any ROS distro if its package.xml contains no conditions.",
     )
-    parser.add_argument("--src-param",
-                        help="Parameter name in arguments of the generated function to be used as a src attribute")
-    parser.add_argument("--source-root",
-                        help="Set sourceRoot attribute value in the generated Nix expression. "
-                        "Substring '{package_name}' gets replaced with the package name.")
+    parser.add_argument(
+        "--src-param",
+        help="Adds a parameter to the generated function and uses it as a value of the src attribute",
+    )
+    parser.add_argument(
+        "--source-root",
+        help="Set sourceRoot attribute value in the generated Nix expression. "
+        "Substring '{package_name}' gets replaced with the package name.",
+    )
 
-    parser.add_argument("--flake", action="store_true", help="Generate top-level flake.nix instead of default.nix. "
-                        "Use with --fetch if some package.xml files are outside of the flake repo.")
-    parser.add_argument("--nixfmt", action="store_true", help="Format the resulting expressions with nixfmt")
+    parser.add_argument(
+        "--flake",
+        action="store_true",
+        help="Generate top-level flake.nix instead of default.nix. "
+        "Use with --fetch if some package.xml files are outside of the flake repo.",
+    )
+    parser.add_argument(
+        "--nixfmt",
+        action="store_true",
+        help="Format the resulting expressions with nixfmt",
+    )
 
     parser.add_argument("--copyright-holder")
-    parser.add_argument("--license", help="License of the generated Nix expression, e.g. 'BSD'")
+    parser.add_argument(
+        "--license", help="License of the generated Nix expression, e.g. 'BSD'"
+    )
 
     args = parser.parse_args()
 
@@ -342,4 +374,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
