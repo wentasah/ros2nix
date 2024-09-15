@@ -92,6 +92,12 @@ import nix-ros-overlay {
 }
 ''')
 
+def generate_flake(args):
+    with open(f'{args.output_dir or "."}/flake.nix', "w") as f:
+        f.write('''
+TODO
+''')
+
 def ros2nix(args):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("source", nargs="+", help="Path to package.xml")
@@ -114,6 +120,8 @@ def ros2nix(args):
                         help="Set sourceRoot attribute value in the generated Nix expression. "
                         "Substring '{package_name}' gets replaced with the package name.")
 
+    parser.add_argument("--flake", action="store_true", help="Generate top-level flake.nix instead of default.nix. "
+                        "Use with --fetch if some package.xml files are outside of the flake repo.")
     parser.add_argument("--nixfmt", action="store_true", help="Format the resulting expressions with nixfmt")
 
     parser.add_argument("--copyright-holder")
@@ -266,7 +274,11 @@ def ros2nix(args):
             raise e
 
     generate_overlay(expressions, args)
-    generate_default(args)
+
+    if args.flake:
+        generate_flake(args)
+    else:
+        generate_default(args)
 
 def main():
     import sys
