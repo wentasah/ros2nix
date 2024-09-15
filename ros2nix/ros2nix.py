@@ -4,6 +4,7 @@
 # Copyright 2024 Michal Sojka <michal.sojka@cvut.cz>
 
 import argparse
+import io
 import itertools
 import json
 import os
@@ -61,8 +62,28 @@ def get_output_file_name(source: str, pkg: Package, args):
     return os.path.join(dir, fn)
 
 
+compare_failed = False
+
+
+@contextmanager
+def file_writer(path: str, compare: bool):
+    # Code to acquire resource, e.g.:
+    f = open(path, "w") if not compare else io.StringIO()
+    try:
+        yield f
+    finally:
+        if compare:
+            ondisk = open(path, "r", encoding="utf-8").read()
+            current = f.getvalue()
+            if current != ondisk:
+                err(f"{path} is not up-to-date")
+                global compare_failed
+                compare_failed = True
+        f.close()
+
+
 def generate_overlay(expressions: dict[str, str], args):
-    with open(f'{args.output_dir or "."}/overlay.nix', "w") as f:
+    with file_writer(f'{args.output_dir or "."}/overlay.nix', args.compare) as f:
         print("self: super:\n{", file=f)
         for pkg in sorted(expressions):
             expr = (
@@ -91,7 +112,7 @@ ros_distro_overlays_def = dedent(
 
 
 def generate_default(args):
-    with open(f'{args.output_dir or "."}/default.nix', "w") as f:
+    with file_writer(f'{args.output_dir or "."}/default.nix', args.compare) as f:
         f.write('''{
   nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
 }:
@@ -105,7 +126,7 @@ import nix-ros-overlay {
 
 
 def generate_flake(args):
-    with open(f'{args.output_dir or "."}/flake.nix', "w") as f:
+    with file_writer(f'{args.output_dir or "."}/flake.nix', args.compare) as f:
         f.write('''
 {
   inputs = {
@@ -233,6 +254,12 @@ def ros2nix(args):
         "--nixfmt",
         action="store_true",
         help="Format the resulting expressions with nixfmt",
+    )
+    parser.add_argument(
+        "--compare",
+        action="store_true",
+        help="Don't write any file, but check whether writing the file would change existing files. "
+        "Exit with exit code 2 if a change is detected. Useful for CI.",
     )
 
     parser.add_argument("--copyright-holder")
@@ -384,8 +411,9 @@ def ros2nix(args):
 
         try:
             output_file_name = get_output_file_name(source, pkg, args)
-            with open(output_file_name, "w") as recipe_file:
+            with file_writer(output_file_name, args.compare) as recipe_file:
                 recipe_file.write(derivation_text)
+            if not args.compare:
                 ok(f"Successfully generated derivation for package '{pkg.name}' as '{output_file_name}'.")
 
             expressions[NixPackage.normalize_name(pkg.name)] = output_file_name
@@ -401,10 +429,14 @@ def ros2nix(args):
         generate_default(args)
         # TODO generate also release.nix (for testing/CI)?
 
+    if args.compare and compare_failed:
+        err("Some files are not up-to-date")
+        return 2
+
 
 def main():
     import sys
-    ros2nix(sys.argv[1:])
+    return ros2nix(sys.argv[1:])
 
 
 if __name__ == '__main__':

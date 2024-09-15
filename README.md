@@ -17,7 +17,7 @@ usage: ros2nix [-h]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
-               [--nixfmt] [--copyright-holder COPYRIGHT_HOLDER]
+               [--nixfmt] [--compare] [--copyright-holder COPYRIGHT_HOLDER]
                [--license LICENSE]
                source [source ...]
 
@@ -73,6 +73,10 @@ options:
                         Use with --fetch if some package.xml files are outside
                         of the flake repo (default: False)
   --nixfmt              Format the resulting expressions with nixfmt (default:
+                        False)
+  --compare             Don't write any file, but check whether writing the
+                        file would change existing files. Exit with exit code
+                        2 if a change is detected. Useful for CI. (default:
                         False)
   --copyright-holder COPYRIGHT_HOLDER
   --license LICENSE     License of the generated Nix expression, e.g. 'BSD'
