@@ -9,7 +9,7 @@ from superflore.exceptions import UnresolvedDependency
 from superflore.generators.nix.nix_package import NixPackage
 from superflore.utils import err, ok, warn
 from superflore.utils import resolve_dep
-from textwrap import dedent
+from textwrap import dedent, indent
 from typing import Iterable, Set
 import argparse
 import itertools
@@ -71,22 +71,29 @@ def generate_overlay(expressions: dict[str, str], args):
         print("}", file=f)
 
 
+ros_distro_overlays_def = dedent(
+    """
+    applyDistroOverlay =
+      rosOverlay: rosPackages:
+      rosPackages
+      // builtins.mapAttrs (
+        rosDistro: rosPkgs: if rosPkgs ? overrideScope then rosPkgs.overrideScope rosOverlay else rosPkgs
+      ) rosPackages;
+    rosDistroOverlays = self: super: {
+      # Apply the overlay to multiple ROS distributions
+      rosPackages = applyDistroOverlay (import ./overlay.nix) super.rosPackages;
+    };
+"""
+).strip()
+
+
 def generate_default(args):
     with open(f'{args.output_dir or "."}/default.nix', "w") as f:
         f.write('''{
   nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
 }:
 let
-  applyDistroOverlay =
-    rosOverlay: rosPackages:
-    rosPackages
-    // builtins.mapAttrs (
-      rosDistro: rosPkgs: if rosPkgs ? overrideScope then rosPkgs.overrideScope rosOverlay else rosPkgs
-    ) rosPackages;
-  rosDistroOverlays = self: super: {
-    # Apply the overlay to multiple ROS distributions
-    rosPackages = applyDistroOverlay (import ./overlay.nix) super.rosPackages;
-  };
+''' + indent(ros_distro_overlays_def, "  ") + '''
 in
 import nix-ros-overlay {
   overlays = [ rosDistroOverlays ];
@@ -97,8 +104,48 @@ import nix-ros-overlay {
 def generate_flake(args):
     with open(f'{args.output_dir or "."}/flake.nix', "w") as f:
         f.write('''
-TODO
-''')
+{
+  inputs = {
+    nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/master";
+    nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!
+  };
+  outputs = { self, nix-ros-overlay, nixpkgs }:
+    nix-ros-overlay.inputs.flake-utils.lib.eachDefaultSystem (system:
+      let
+''' + indent(ros_distro_overlays_def, "        ") + '''
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [
+            nix-ros-overlay.overlays.default
+            rosDistroOverlays
+          ];
+        };
+      in {
+        legacyPackages = pkgs.rosPackages;
+''' + f'''
+        packages = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.{args.distro};
+        checks = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.{args.distro};
+''' + '''
+        devShells.default = pkgs.mkShell {
+          name = "Example project";
+          packages = [
+            pkgs.colcon
+            # ... other non-ROS packages
+            (with pkgs.rosPackages.humble; buildEnv {
+              paths = [
+                ros-core
+                # ... other ROS packages
+              ];
+            })
+          ];
+        };
+      });
+  nixConfig = {
+    extra-substituters = [ "https://ros.cachix.org" ];
+    extra-trusted-public-keys = [ "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=" ];
+  };
+}
+'''.strip())
 
 
 def ros2nix(args):
@@ -117,8 +164,12 @@ def ros2nix(args):
     parser.add_argument("--fetch", action="store_true", help="Use fetches like fetchFromGitHub for src attribute. "
                        "The fetch function and its parameters are determined from the local git work tree."
                        "sourceRoot is set if needed and not overridden by --source-root.")
-    parser.add_argument("--distro", default="rolling",
-                        help="ROS distro (used as a context for evaluation of conditions in package.xml and in the name of the Nix expression)")
+    parser.add_argument(
+        "--distro",
+        default="rolling",
+        help="ROS distro (used as a context for evaluation of conditions "
+        "in package.xml, in the name of the Nix expression and in flake.nix.)",
+    )
     parser.add_argument("--src-param",
                         help="Parameter name in arguments of the generated function to be used as a src attribute")
     parser.add_argument("--source-root",
@@ -282,6 +333,7 @@ def ros2nix(args):
         generate_flake(args)
     else:
         generate_default(args)
+        # TODO generate also release.nix (for testing/CI)?
 
 
 def main():
