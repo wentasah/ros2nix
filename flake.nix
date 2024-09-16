@@ -7,7 +7,7 @@
   inputs.flake-compat.url = "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz";
 
   outputs =
-    { nixpkgs, flake-utils, nix-ros-overlay, ... } @ inputs:
+    { self, nixpkgs, flake-utils, nix-ros-overlay, ... } @ inputs:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
@@ -94,6 +94,11 @@
         packages = {
           default = ros2nix;
           inherit rosdistro rosdep-cache rosdep ros2nix;
+        };
+        checks = {
+          mdsh = pkgs.runCommandNoCC "mdsh" {
+            nativeBuildInputs = [ ros2nix ];
+          } "cd ${self}; ${pkgs.mdsh}/bin/mdsh --frozen";
         };
       }
     );
