@@ -3,8 +3,45 @@
 Tool to convert [ROS][] `package.xml` to [Nix][] expressions
 compatible with [nix-ros-overlay][].
 
-This is work-in-progress. I'll add documentation after it works
-reasonably well.
+> [!NOTE]
+> This is work-in-progress. More documentation will be added later.
+
+## Installation
+
+- With nix-env:
+  ```sh
+  nix-env --install -f https://github.com/wentasah/ros2nix/archive/main.tar.gz
+  ```
+- With Nix flakes experimental feature:
+  ```sh
+  nix profile install github:wentasah/ros2nix
+  ```
+
+## Usage examples
+
+### Nixifying local ROS workspace
+
+1. Create Nix expressions for local packages
+   ```sh
+   ros2nix $(find -name package.xml)
+   ```
+   This also creates `./overlay.nix` and `./default.nix` for easy
+   integration and/or testing of created packages.
+
+2. Try building some of your packages (replace `my-package` with real
+   name):
+   ```sh
+   nix-build -A rosPackages.humble.my-package
+   nix-build -A rosPackages.jazzy.my-package
+   ```
+   If the build succeeds, you're probably done. Failures can be caused
+   by several things:
+   - Missing dependencies in your `package.xml`
+   - Bugs in your packages (e.g. in `CMakeLists.txt`)
+   - Bugs in `ros2nix` – please, report them.
+   - Bugs in `nix-ros-overlay` – report them too :-).
+
+## ros2nix reference
 
 <!-- `$  python3 -m ros2nix --help` -->
 ```
