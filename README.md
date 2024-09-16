@@ -13,7 +13,7 @@ usage: ros2nix [-h]
                [--output OUTPUT | --output-as-ros-pkg-name | --output-as-nix-pkg-name]
                [--output-dir OUTPUT_DIR] [--fetch] [--distro DISTRO]
                [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
-               [--extra-build-inputs DEP1,DEP2,...]
+               [--do-check] [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
@@ -57,6 +57,7 @@ options:
                         Set sourceRoot attribute value in the generated Nix
                         expression. Substring '{package_name}' gets replaced
                         with the package name. (default: None)
+  --do-check            Set doCheck attribute to true (default: False)
   --extra-build-inputs DEP1,DEP2,...
                         Additional dependencies to add to the generated Nix
                         expressions (default: [])
