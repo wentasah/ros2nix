@@ -94,11 +94,15 @@
         packages = {
           default = ros2nix;
           inherit rosdistro rosdep-cache rosdep ros2nix;
+          inherit (pkgs) mdsh;
         };
         checks = {
-          mdsh = pkgs.runCommandNoCC "mdsh" {
-            nativeBuildInputs = [ ros2nix ];
-          } "cd ${self}; ${pkgs.mdsh}/bin/mdsh --frozen";
+          mdsh-check-readme = pkgs.runCommandNoCC "mdsh"
+            { nativeBuildInputs = [ ros2nix ]; } ''
+             mkdir $out; cd ${self};
+             if ! ${pkgs.mdsh}/bin/mdsh --frozen; then
+               echo 'Update README with `nix run .#mdsh`.'
+             fi'';
         };
       }
     );

@@ -7,7 +7,6 @@ This is work-in-progress. I'll add documentation after it works
 reasonably well.
 
 <!-- `$  python3 -m ros2nix --help` -->
-
 ```
 usage: ros2nix [-h]
                [--output OUTPUT | --output-as-ros-pkg-name | --output-as-nix-pkg-name]
