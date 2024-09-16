@@ -226,6 +226,11 @@ def ros2nix(args):
         help="Set sourceRoot attribute value in the generated Nix expression. "
         "Substring '{package_name}' gets replaced with the package name.",
     )
+    parser.add_argument(
+        "--do-check",
+        action="store_true",
+        help="Set doCheck attribute to true",
+    )
 
     parser.add_argument(
         "--extra-build-inputs", type=comma_separated, metavar="DEP1,DEP2,...", default=[],
@@ -368,6 +373,9 @@ def ros2nix(args):
 
             if args.source_root:
                 kwargs["source_root"] = args.source_root.replace('{package_name}', pkg.name)
+
+            if args.do_check:
+                kwargs["do_check"] = True
 
             derivation = NixExpression(
                 name=NixPackage.normalize_name(pkg.name),

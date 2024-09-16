@@ -94,12 +94,14 @@ class NixExpression:
                  propagated_native_build_inputs: Set[str] = set(),
                  src_param: Optional[str] = None,
                  source_root: Optional[str] = None,
+                 do_check: Optional[bool] = None,
                  ) -> None:
         self.name = name
         self.version = version
         self.src_param = src_param
         self.src_expr = src_expr
         self.source_root = source_root
+        self.do_check = do_check
 
         self.description = description
         self.licenses = licenses
@@ -169,6 +171,9 @@ class NixExpression:
 
         if self.source_root:
             ret += f'  sourceRoot = "{self.source_root}";\n'
+
+        if self.do_check is not None:
+            ret += f'  doCheck = {"true" if self.do_check else "false"};\n'
 
         if self.build_inputs:
             ret += "  buildInputs = {};\n" \
