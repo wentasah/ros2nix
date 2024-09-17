@@ -41,6 +41,41 @@ compatible with [nix-ros-overlay][].
    - Bugs in `ros2nix` – please, report them.
    - Bugs in `nix-ros-overlay` – report them too :-).
 
+## Nixifying 3rd party ROS packages
+
+You can use 3rd party ROS packages (which are not a part of ROS
+distribution) in your project as follows. We'll show the procedure on
+the [Autoware][] project as an example.
+
+1. Clone the 3rd party repositories, e.g.
+   ```sh
+   git clone https://github.com/autowarefoundation/autoware.git
+   cd autoware
+   mkdir src
+   vcs import src < autoware.repos
+   cd ..
+
+   ros2nix --output-as-nix-pkg-name --fetch $(find -name package.xml|grep -v ament_cmake)
+   ```
+   This will create all Nix expressions in the current directory and
+   named according to their package names. The expressions will
+   _fetch_ the source code from GitHub instead of from local
+   filesystem. Note that we ignore ament_cmake packages forked by
+   autoware since they break the build.
+
+2. Try building some packages:
+   ```
+   nix-build -A rosPackages.humble.autoware-overlay-rviz-plugin
+   ```
+   Note that not all autoware packages can be build successfully.
+
+> [!TIP] To build all generated packages, run `ros2nix` with the
+> `--flake` switch and then run `nix flake check` (depending on your
+> configuration, you may need to add `--experimental-features
+> 'nix-command flakes'`).
+
+[Autoware]: https://autoware.org/
+
 ## ros2nix reference
 
 <!-- `$  python3 -m ros2nix --help` -->
