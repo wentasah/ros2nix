@@ -3,9 +3,6 @@
 Tool to convert [ROS][] `package.xml` to [Nix][] expressions
 compatible with [nix-ros-overlay][].
 
-> [!NOTE]
-> This is work-in-progress. More documentation will be added later.
-
 ## Installation
 
 - With nix-env:
