@@ -69,8 +69,10 @@ the [Autoware][] project as an example.
    ```
    Note that not all autoware packages can be build successfully.
 
-> [!TIP] To build all generated packages, run `ros2nix` with the
-> `--flake` switch and then run `nix flake check` (depending on your
+> [!TIP]
+>
+> To build all generated packages, run `ros2nix` with the `--flake`
+> switch and then run `nix flake check` (depending on your
 > configuration, you may need to add `--experimental-features
 > 'nix-command flakes'`).
 
