@@ -16,11 +16,11 @@ jobs:
       - name: Update rosdistro
         run: |
           nix flake update rosdistro --commit-lock-file
-          git show --format='%b' --no-patch > .body
+          git show --format='%b' --no-patch > /tmp/.body
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
           branch: rosdistro-updates
           delete-branch: true
           title: 'Rosdistro update'
-          body-path: .body
+          body-path: /tmp/.body
