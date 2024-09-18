@@ -34,9 +34,12 @@ compatible with [nix-ros-overlay][].
    If the build succeeds, you're probably done. Failures can be caused
    by several things:
    - Missing dependencies in your `package.xml`
+   - Missing/stale `nixos` keys for nixpkgs packages in [rosdep yaml database][]
    - Bugs in your packages (e.g. in `CMakeLists.txt`)
-   - Bugs in `ros2nix` – please, report them.
-   - Bugs in `nix-ros-overlay` – report them too :-).
+   - Bugs in `ros2nix` – please, report them
+   - Bugs in `nix-ros-overlay` – report them too :-)
+
+[rosdep yaml database]: https://github.com/ros/rosdistro/tree/master/rosdep
 
 ## Nixifying 3rd party ROS packages
 
