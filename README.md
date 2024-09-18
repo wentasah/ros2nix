@@ -89,10 +89,10 @@ usage: ros2nix [-h]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
                [--nixfmt] [--compare] [--copyright-holder COPYRIGHT_HOLDER]
                [--license LICENSE]
-               source [source ...]
+               package.xml [package.xml ...]
 
 positional arguments:
-  source                Path to package.xml
+  package.xml           Path to package.xml
 
 options:
   -h, --help            show this help message and exit

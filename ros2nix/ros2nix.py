@@ -181,7 +181,7 @@ def ros2nix(args):
     parser = argparse.ArgumentParser(
         prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("source", nargs="+", help="Path to package.xml")
+    parser.add_argument("source", nargs="+", metavar="package.xml", help="Path to package.xml")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--output", default="package.nix", help="Output filename")
