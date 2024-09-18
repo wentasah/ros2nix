@@ -200,7 +200,7 @@ def ros2nix(args):
         "--output-dir",
         help="Directory to generate output files in. "
         "By default, package files are stored next to their corresponding package.xml, "
-        "top-level files like overlay.nix in the current directory)",
+        "top-level files like overlay.nix in the current directory.",
     )
 
     parser.add_argument(
@@ -267,9 +267,11 @@ def ros2nix(args):
         "Exit with exit code 2 if a change is detected. Useful for CI.",
     )
 
-    parser.add_argument("--copyright-holder")
     parser.add_argument(
-        "--license", help="License of the generated Nix expression, e.g. 'BSD'"
+        "--copyright-holder", help="Copyright holder of the generated Nix expressions."
+    )
+    parser.add_argument(
+        "--license", help="License of the generated Nix expressions, e.g. 'BSD'"
     )
 
     args = parser.parse_args()

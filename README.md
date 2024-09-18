@@ -109,7 +109,7 @@ options:
                         Directory to generate output files in. By default,
                         package files are stored next to their corresponding
                         package.xml, top-level files like overlay.nix in the
-                        current directory) (default: None)
+                        current directory. (default: None)
   --fetch               Use fetches like fetchFromGitHub in src attribute
                         values. The fetch function and its parameters are
                         determined from the local git work tree. sourceRoot
@@ -150,7 +150,9 @@ options:
                         2 if a change is detected. Useful for CI. (default:
                         False)
   --copyright-holder COPYRIGHT_HOLDER
-  --license LICENSE     License of the generated Nix expression, e.g. 'BSD'
+                        Copyright holder of the generated Nix expressions.
+                        (default: None)
+  --license LICENSE     License of the generated Nix expressions, e.g. 'BSD'
                         (default: None)
 ```
 
