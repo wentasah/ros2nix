@@ -1,0 +1,24 @@
+name: Update rosdistro
+on:
+  schedule:
+    - cron: "0 12 * * FRI"
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Configure git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+      - name: Update rosdistro
+        run: nix flake update rosdistro --commit-lock-file
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: rosdistro-updates
+          base: main
+          delete-branch: true
+          title: 'Rosdistro update'
