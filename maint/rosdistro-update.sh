@@ -23,4 +23,5 @@ $(cat /tmp/rosdistro-diff)
 EOF
 else
     echo "No relevant changes"
+    touch "$pr_body" # prevent create-pull-request action from failing
 fi
