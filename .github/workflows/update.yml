@@ -14,11 +14,13 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
       - name: Update rosdistro
-        run: nix flake update rosdistro --commit-lock-file
+        run: |
+          nix flake update rosdistro --commit-lock-file
+          git show --format='%b' --no-patch > .body
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
           branch: rosdistro-updates
-          base: main
           delete-branch: true
           title: 'Rosdistro update'
+          body-path: .body
