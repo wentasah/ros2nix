@@ -13,29 +13,8 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-      - name: Update rosdistro
-        run: |
-          nix build .#rosdistro --out-link /tmp/rosdistro-old
-          nix flake update rosdistro
-          nix build .#rosdistro --out-link /tmp/rosdistro-new
-          grep -Rh nixos: /tmp/rosdistro-old > /tmp/rosdistro-old.txt
-          grep -Rh nixos: /tmp/rosdistro-new > /tmp/rosdistro-new.txt
-          git reset --hard
-          if ! git diff /tmp/rosdistro-old.txt /tmp/rosdistro-new.txt > /tmp/rosdistro-diff; then
-            # redo update with nice commit message
-            nix flake update rosdistro --commit-lock-file
-            GIT_EDITOR='sed -i -e "1crosdistro update"' git commit --amend
-            GIT_EDITOR='sed -i -e "\$R/tmp/rosdistro-diff"' git commit --amend
-            cat <<EOF > /tmp/.body
-            Diff:
-            ```diff
-            $(cat /tmp/rosdistro-diff)
-            ```
-          EOF
-          else
-            echo "No relevant changes"
-          fi
-          git show --format='%b' --no-patch > /tmp/.body
+      - name: Update rosdistro /tmp/.body
+        run: ./maint/rosdistro-update.sh
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
