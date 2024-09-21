@@ -1,7 +1,11 @@
 # ros2nix
 
 Tool to convert [ROS][] `package.xml` to [Nix][] expressions
-compatible with [nix-ros-overlay][].
+compatible with [nix-ros-overlay][]. Under the hood, it uses
+[rosdep][] to convert ROS package names to nixpkgs attributes so that
+you don't have to be concerned with it.
+
+[rosdep]: https://github.com/ros-infrastructure/rosdep
 
 ## Installation
 
@@ -9,9 +13,18 @@ compatible with [nix-ros-overlay][].
   ```sh
   nix-env --install -f https://github.com/wentasah/ros2nix/archive/main.tar.gz
   ```
+  or try it out without installation:
+  ```sh
+  nix-shell -p '(import (fetchTarball "https://github.com/wentasah/ros2nix/archive/main.tar.gz")).default'
+  ```
+
 - With Nix flakes experimental feature:
   ```sh
   nix profile install github:wentasah/ros2nix
+  ```
+  or try it out without installation:
+  ```sh
+  nix shell github:wentasah/ros2nix
   ```
 
 ## Usage examples
