@@ -256,6 +256,12 @@ def ros2nix(args):
         "Use with --fetch if some package.xml files are outside of the flake repo",
     )
     parser.add_argument(
+        "--overlay",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Generate overlay.nix",
+    )
+    parser.add_argument(
         "--nixfmt",
         action="store_true",
         help="Format the resulting expressions with nixfmt",
@@ -431,7 +437,8 @@ def ros2nix(args):
             err("Failed to write derivation to disk!")
             raise e
 
-    generate_overlay(expressions, args)
+    if args.overlay:
+        generate_overlay(expressions, args)
 
     if args.flake:
         generate_flake(args)

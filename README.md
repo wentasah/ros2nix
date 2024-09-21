@@ -103,8 +103,8 @@ usage: ros2nix [-h]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
-               [--nixfmt] [--compare] [--copyright-holder COPYRIGHT_HOLDER]
-               [--license LICENSE]
+               [--overlay | --no-overlay] [--nixfmt] [--compare]
+               [--copyright-holder COPYRIGHT_HOLDER] [--license LICENSE]
                package.xml [package.xml ...]
 
 positional arguments:
@@ -159,6 +159,8 @@ options:
   --flake               Generate top-level flake.nix instead of default.nix.
                         Use with --fetch if some package.xml files are outside
                         of the flake repo (default: False)
+  --overlay, --no-overlay
+                        Generate overlay.nix (default: True)
   --nixfmt              Format the resulting expressions with nixfmt (default:
                         False)
   --compare             Don't write any file, but check whether writing the
