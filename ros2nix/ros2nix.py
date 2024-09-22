@@ -256,6 +256,11 @@ def ros2nix(args):
         "Use with --fetch if some package.xml files are outside of the flake repo",
     )
     parser.add_argument(
+        "--default",
+        action=argparse.BooleanOptionalAction,
+        help="Enforce/suppress generation of default.nix",
+    )
+    parser.add_argument(
         "--overlay",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -442,7 +447,7 @@ def ros2nix(args):
 
     if args.flake:
         generate_flake(args)
-    else:
+    if args.default or (args.default is None and not args.flake):
         generate_default(args)
         # TODO generate also release.nix (for testing/CI)?
 
