@@ -111,17 +111,37 @@ ros_distro_overlays_def = dedent(
 ).strip()
 
 
+def flakeref_to_expr(flakeref) -> str:
+    match flakeref[0]:
+        case '.' | '/':
+            expr = flakeref
+        case _:
+            match re.match("(?P<type>.*?):(?P<owner>.*?)/(?P<repo>.*?)(?:/(?P<ref>.*))?$", flakeref):
+                case None:
+                    raise Exception(f'Unsupported flakeref: "{flakeref}"')
+                case parts:
+                    match parts.groups():
+                        case ('github', owner, repo, None):
+                            expr = f'builtins.fetchTarball "https://github.com/{owner}/{repo}/archive/HEAD.tar.gz"'
+                        case ('github', owner, repo, branch):
+                            expr = f'builtins.fetchTarball "https://github.com/{owner}/{repo}/archive/{branch}.tar.gz"'
+                        case _:
+                            raise Exception(f'Unsupported flakeref: "{flakeref}"')
+    return expr
+
+
 def generate_default(args):
+    nix_ros_overlay = flakeref_to_expr(args.nix_ros_overlay)
     with file_writer(f'{args.output_dir or "."}/default.nix', args.compare) as f:
-        f.write('''{
-  nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
-}:
+        f.write(f'''{{
+  nix-ros-overlay ? {nix_ros_overlay},
+}}:
 let
-''' + indent(ros_distro_overlays_def, "  ") + '''
+{indent(ros_distro_overlays_def, "  ")}
 in
-import nix-ros-overlay {
+import nix-ros-overlay {{
   overlays = [ rosDistroOverlays ];
-}
+}}
 ''')
 
 
@@ -130,7 +150,7 @@ def generate_flake(args):
         f.write('''
 {
   inputs = {
-    nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/master";
+    nix-ros-overlay.url = "''' + args.nix_ros_overlay + '''";
     nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!
   };
   outputs = { self, nix-ros-overlay, nixpkgs }:
@@ -265,6 +285,12 @@ def ros2nix(args):
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Generate overlay.nix",
+    )
+    parser.add_argument(
+        "--nix-ros-overlay",
+        metavar="FLAKEREF",
+        default="github:lopsided98/nix-ros-overlay/master",
+        help="Flake reference of nix-ros-overlay. You may want to change the branch from master to develop or use your own fork.",
     )
     parser.add_argument(
         "--nixfmt",

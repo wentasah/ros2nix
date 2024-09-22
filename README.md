@@ -104,8 +104,8 @@ usage: ros2nix [-h]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
                [--default | --no-default] [--overlay | --no-overlay]
-               [--nixfmt] [--compare] [--copyright-holder COPYRIGHT_HOLDER]
-               [--license LICENSE]
+               [--nix-ros-overlay FLAKEREF] [--nixfmt] [--compare]
+               [--copyright-holder COPYRIGHT_HOLDER] [--license LICENSE]
                package.xml [package.xml ...]
 
 positional arguments:
@@ -165,6 +165,11 @@ options:
                         None)
   --overlay, --no-overlay
                         Generate overlay.nix (default: True)
+  --nix-ros-overlay FLAKEREF
+                        Flake reference of nix-ros-overlay. You may want to
+                        change the branch from master to develop or use your
+                        own fork. (default: github:lopsided98/nix-ros-
+                        overlay/master)
   --nixfmt              Format the resulting expressions with nixfmt (default:
                         False)
   --compare             Don't write any file, but check whether writing the
