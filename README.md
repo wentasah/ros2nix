@@ -54,7 +54,7 @@ you don't have to be concerned with it.
 
 [rosdep yaml database]: https://github.com/ros/rosdistro/tree/master/rosdep
 
-## Nixifying 3rd party ROS packages
+### Nixifying 3rd party ROS packages
 
 You can use 3rd party ROS packages (which are not a part of ROS
 distribution) in your project as follows. We'll show the procedure on
