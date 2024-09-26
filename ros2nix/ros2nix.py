@@ -431,7 +431,7 @@ def ros2nix(args):
             )
 
         except Exception as e:
-            err('Failed to prepare Nix expression for package {}!'.format(pkg))
+            err(f'Failed to prepare Nix expression from {source}')
             raise e
 
         try:
