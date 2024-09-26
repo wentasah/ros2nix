@@ -4,6 +4,7 @@
 # Copyright 2024 Michal Sojka <michal.sojka@cvut.cz>
 
 import argparse
+import difflib
 import io
 import itertools
 import json
@@ -77,6 +78,13 @@ def file_writer(path: str, compare: bool):
             current = f.getvalue()
             if current != ondisk:
                 err(f"{path} is not up-to-date")
+                for line in difflib.unified_diff(
+                    ondisk.splitlines(),
+                    current.splitlines(),
+                    fromfile=path,
+                    tofile="up-to-date",
+                ):
+                    print(line)
                 global compare_failed
                 compare_failed = True
         f.close()
