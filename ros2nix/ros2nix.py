@@ -366,7 +366,7 @@ def ros2nix(args):
                 kwargs["src_param"] = args.src_param
                 kwargs["src_expr"] = args.src_param
             elif args.fetch:
-                srcdir = os.path.dirname(source)
+                srcdir = os.path.dirname(source) or "."
                 url = subprocess.check_output(
                     "git config remote.origin.url".split(), cwd=srcdir
                 ).decode().strip()
@@ -416,7 +416,7 @@ def ros2nix(args):
                 if args.output_dir is None:
                     kwargs["src_expr"] = "./."
                 else:
-                    kwargs["src_expr"] = f"./{os.path.relpath(os.path.dirname(source), args.output_dir)}"
+                    kwargs["src_expr"] = f"./{os.path.dirname(os.path.relpath(source, args.output_dir)) or '.'}"
 
             if args.source_root:
                 kwargs["source_root"] = args.source_root.replace('{package_name}', pkg.name)
