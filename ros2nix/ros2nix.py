@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 
 # Copyright 2019-2024 Ben Wolsieffer <benwolsieffer@gmail.com>
 # Copyright 2024 Michal Sojka <michal.sojka@cvut.cz>
 
-import argparse
+import argcomplete, argparse
 import difflib
 import io
 import itertools
@@ -319,6 +320,7 @@ def ros2nix(args):
         "--license", help="License of the generated Nix expressions, e.g. 'BSD'"
     )
 
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     if args.output_dir is None and (args.output_as_nix_pkg_name or args.output_as_ros_pkg_name):

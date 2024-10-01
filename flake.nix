@@ -60,14 +60,19 @@
           src = pkgs.lib.cleanSource ./.;
           pyproject = true;
 
-          nativeBuildInputs = with pkgs.python3Packages; [
+          build-system = with pkgs.python3Packages; [
             setuptools
+          ];
+          nativeBuildInputs = with pkgs; [
+            installShellFiles
+            python3Packages.argcomplete
           ];
           propagatedBuildInputs = with pkgs; [
             git
             nix-prefetch-git
             nixfmt-rfc-style
             superflore
+            python3Packages.argcomplete
           ];
           makeWrapperArgs = [
             "--set ROS_HOME ${rosdep-cache}"
@@ -75,6 +80,13 @@
             "--set ROSDISTRO_INDEX_URL file://${rosdistro}/index-v4.yaml"
             "--set ROS_OS_OVERRIDE nixos"
           ];
+          postInstall = ''
+            installShellCompletion --cmd ros2nix \
+              --bash <(register-python-argcomplete ros2nix) \
+              --fish <(register-python-argcomplete ros2nix -s fish) \
+              --zsh <(register-python-argcomplete ros2nix -s zsh)
+          '';
+
         };
       in
       {
