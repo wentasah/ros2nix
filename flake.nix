@@ -56,7 +56,8 @@
         });
         ros2nix = pkgs.python3Packages.buildPythonApplication {
           pname = "ros2nix";
-          version = inputs.self.lastModifiedDate;
+          version = let lmd = self.lastModifiedDate; in with builtins;
+            "${substring 0 8 lmd}-${substring 8 6 lmd}";
           src = pkgs.lib.cleanSource ./.;
           pyproject = true;
 
