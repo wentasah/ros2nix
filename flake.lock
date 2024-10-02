@@ -53,35 +53,37 @@
     "nix-ros-overlay": {
       "inputs": {
         "flake-utils": "flake-utils_2",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": [
+          "nixpkgs"
+        ]
       },
       "locked": {
-        "lastModified": 1712797796,
-        "narHash": "sha256-SkCWsnJ6H+LbXt7PLroXCPlb0k52+EG7WKEXtWjuNbI=",
+        "lastModified": 1727450207,
+        "narHash": "sha256-IYfuTysAvph03Iyc/XwuM04yd0qJhm/OtziZglwYys0=",
         "owner": "lopsided98",
         "repo": "nix-ros-overlay",
-        "rev": "e239e71fd2ce40ce1f7499328a4c92e9473fec88",
+        "rev": "31e1e361f41a0e4116d4c34eb608931dfd101492",
         "type": "github"
       },
       "original": {
         "owner": "lopsided98",
-        "ref": "master",
+        "ref": "develop",
         "repo": "nix-ros-overlay",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1707268954,
-        "narHash": "sha256-2en1kvde3cJVc3ZnTy8QeD2oKcseLFjYPLKhIGDanQ0=",
-        "owner": "lopsided98",
+        "lastModified": 1727802920,
+        "narHash": "sha256-HP89HZOT0ReIbI7IJZJQoJgxvB2Tn28V6XS3MNKnfLs=",
+        "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "f8e2ebd66d097614d51a56a755450d4ae1632df1",
+        "rev": "27e30d177e57d912d614c88c622dcfdb2e6e6515",
         "type": "github"
       },
       "original": {
-        "owner": "lopsided98",
-        "ref": "nix-ros",
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -91,10 +93,7 @@
         "flake-compat": "flake-compat",
         "flake-utils": "flake-utils",
         "nix-ros-overlay": "nix-ros-overlay",
-        "nixpkgs": [
-          "nix-ros-overlay",
-          "nixpkgs"
-        ],
+        "nixpkgs": "nixpkgs",
         "rosdistro": "rosdistro"
       }
     },

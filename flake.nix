@@ -1,8 +1,8 @@
 {
   description = "Tool to convert ROS package.xml to Nix expressions compatible with nix-ros-overlay";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.nix-ros-overlay.url = "github:lopsided98/nix-ros-overlay/master";
-  inputs.nixpkgs.follows = "nix-ros-overlay/nixpkgs";
+  inputs.nix-ros-overlay = { url = "github:lopsided98/nix-ros-overlay/develop"; inputs.nixpkgs.follows = "nixpkgs"; };
   inputs.rosdistro = { url = "github:ros/rosdistro"; flake = false; };
   inputs.flake-compat.url = "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz";
 
