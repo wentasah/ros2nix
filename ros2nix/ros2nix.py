@@ -75,9 +75,16 @@ def file_writer(path: str, compare: bool):
         yield f
     finally:
         if compare:
-            ondisk = open(path, "r", encoding="utf-8").read()
+            global compare_failed
+            ondisk = None
+            try:
+                ondisk = open(path, "r", encoding="utf-8").read()
+            except Exception as e:
+                compare_failed = True
+                err(f'Cannot read {path}: {e}')
+
             current = f.getvalue()
-            if current != ondisk:
+            if ondisk is not None and current != ondisk:
                 err(f"{path} is not up-to-date")
                 for line in difflib.unified_diff(
                     ondisk.splitlines(),
@@ -86,7 +93,6 @@ def file_writer(path: str, compare: bool):
                     tofile="up-to-date",
                 ):
                     print(line)
-                global compare_failed
                 compare_failed = True
         f.close()
 
