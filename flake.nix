@@ -109,6 +109,7 @@
           ];
           ROSDEP_SOURCE_PATH = "${rosdistro}/rosdep/sources.list.d";
           ROSDISTRO_INDEX_URL = "file://${rosdistro}/index-v4.yaml";
+          ROS_HOME = rosdep-cache;
         };
         packages = {
           default = ros2nix;
