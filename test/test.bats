@@ -59,3 +59,16 @@ setup() {
     ros2nix $(find ws/src -name package.xml)
     ros2nix --compare $(find ws/src -name package.xml)
 }
+
+@test "--compare with changed package.xml" {
+    ros2nix $(find ws/src -name package.xml)
+    sed -i -e '4a<depend>libpng</depend>' ws/src/ros_node/package.xml
+    run -2 ros2nix --compare $(find ws/src -name package.xml)
+    assert_line "+  propagatedBuildInputs = [ libpng library ];"
+}
+
+@test "--compare with added package" {
+    ros2nix ws/src/library/package.xml
+    run -2 ros2nix --compare ws/src/{library,ros_node}/package.xml
+    assert_line --partial "Cannot read ws/src/ros_node/package.nix"
+}
