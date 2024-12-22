@@ -72,3 +72,10 @@ setup() {
     run -2 ros2nix --compare ws/src/{library,ros_node}/package.xml
     assert_line --partial "Cannot read ws/src/ros_node/package.nix"
 }
+
+@test "--fetch from github over https" {
+    git clone https://github.com/wentasah/ros2nix
+    ros2nix --output-as-nix-pkg-name --fetch $(find "ros2nix/test/ws/src" -name package.xml)
+    cat ros-node.nix
+    nix-build -A rosPackages.jazzy.ros-node
+}
