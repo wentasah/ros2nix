@@ -1,2 +1,3 @@
+import sys
 from .ros2nix import main
-main()
+sys.exit(main())
