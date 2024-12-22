@@ -59,6 +59,41 @@ load common.bash
 @test "--fetch from github over https" {
     git clone https://github.com/wentasah/ros2nix
     ros2nix --output-as-nix-pkg-name --fetch $(find "ros2nix/test/ws/src" -name package.xml)
-    cat ros-node.nix
     nix-build -A rosPackages.jazzy.ros-node
+    run ./result/lib/ros_node/node
+    assert_success
+    assert_line --partial "hello world"
+}
+
+@test "--patches without --fetch" {
+    run ! ros2nix --patches $(find ws/src -name package.xml)
+}
+
+@test "--fetch --patches" {
+    git clone https://github.com/wentasah/ros2nix
+    pushd ros2nix
+    sed -i -e 's/hello world/hello patch/' test/ws/src/ros_node/src/node.cpp
+    git commit -m 'test patch' -- test/ws/src/ros_node/src/node.cpp
+    popd
+    ros2nix --output-as-nix-pkg-name --fetch --patches $(find "ros2nix/test/ws/src" -name package.xml)
+    # remove original (abd patched) sources
+    rm -rf ros2nix
+    nix-build -A rosPackages.jazzy.ros-node
+    # validate that we get patched binary
+    run ./result/lib/ros_node/node
+    assert_success
+    assert_line --partial "hello patch"
+}
+
+@test "--fetch --patches with colliding changes" {
+    git clone https://github.com/wentasah/ros2nix
+    pushd ros2nix
+    sed -i -e 's/hello world/hello patch/' test/ws/src/ros_node/src/node.cpp
+    git commit -m 'test patch' -- test/ws/src/ros_node/src/node.cpp
+    sed -i -e '1a// comment' test/ws/src/library/src/library.cpp
+    git commit -m 'test patch' -- test/ws/src/library/src/library.cpp
+    popd
+    run ros2nix --output-as-nix-pkg-name --fetch --patches $(find "ros2nix/test/ws/src" -name package.xml)
+    assert_failure
+    assert_line --partial "Patch ./0001-test-patch.patch already exists"
 }

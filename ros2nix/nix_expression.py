@@ -25,7 +25,7 @@
 from operator import attrgetter
 from textwrap import dedent, indent
 from time import gmtime, strftime
-from typing import Iterable, Set, Optional
+from typing import Iterable, Set, Optional, List
 
 from superflore.utils import get_license
 
@@ -95,11 +95,13 @@ class NixExpression:
                  src_param: Optional[str] = None,
                  source_root: Optional[str] = None,
                  do_check: Optional[bool] = None,
+                 patches: Optional[List[str]] = None,
                  ) -> None:
         self.name = name
         self.version = version
         self.src_param = src_param
         self.src_expr = src_expr
+        self.patches = patches
         self.source_root = source_root
         self.do_check = do_check
 
@@ -168,6 +170,8 @@ class NixExpression:
             version=self.version,
             src=src,
             build_type=self.build_type)
+        if self.patches:
+            ret += f"""  patches = [\n    {"\n    ".join(self.patches)}\n  ];\n"""
 
         if self.source_root:
             ret += f'  sourceRoot = "{self.source_root}";\n'

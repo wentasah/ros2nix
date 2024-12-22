@@ -4,6 +4,7 @@
 # Copyright 2019-2024 Ben Wolsieffer <benwolsieffer@gmail.com>
 # Copyright 2024 Michal Sojka <michal.sojka@cvut.cz>
 
+from os.path import dirname
 import argcomplete, argparse
 import difflib
 import io
@@ -247,6 +248,13 @@ def ros2nix(args):
         "sourceRoot attribute is set if needed and not overridden by --source-root.",
     )
     parser.add_argument(
+        "--patches",
+        action=argparse.BooleanOptionalAction,
+        help="""Add git commits not present in git remote named "origin" as patches in the """
+        """generated Nix expression. Only allowed with --fetch. This option is experimental """
+        """and may be changed in the future.""",
+    )
+    parser.add_argument(
         "--distro",
         default="rolling",
         help="ROS distro (used as a context for evaluation of conditions "
@@ -333,8 +341,13 @@ def ros2nix(args):
     if args.output_dir is None and (args.output_as_nix_pkg_name or args.output_as_ros_pkg_name):
         args.output_dir = "."
 
+    if args.patches and not args.fetch:
+        err("--patches cannot be used without --fetch")
+        return 1
+
     expressions: dict[str, str] = {}
     git_cache = {}
+    patch_filenames = set()
 
     for source in args.source:
         try:
@@ -370,6 +383,7 @@ def ros2nix(args):
                 buildtool_deps | buildtool_export_deps)
 
             kwargs = {}
+            patches = []
 
             if args.src_param:
                 kwargs["src_param"] = args.src_param
@@ -388,12 +402,25 @@ def ros2nix(args):
                     "git rev-parse --show-toplevel".split(), cwd=srcdir
                 ).decode().strip()
 
+                head = subprocess.check_output(
+                    "git rev-parse HEAD".split(), cwd=srcdir
+                ).decode().strip()
+
                 if toplevel in git_cache:
                     info = git_cache[toplevel]
+                    upstream_rev = info["rev"]
                 else:
+                    # Latest commit present in the upstream repo. If
+                    # the local repository doesn't have additional
+                    # commits, it is the same as HEAD. Should work
+                    # even with detached HEAD.
+                    upstream_rev = subprocess.check_output(
+                        "git merge-base HEAD $(git for-each-ref refs/remotes/origin --format='%(objectname)')",
+                        shell=True, cwd=srcdir
+                    ).decode().strip()
                     info = json.loads(
                         subprocess.check_output(
-                            ["nix-prefetch-git", "--quiet", toplevel],
+                            ["nix-prefetch-git", "--quiet", toplevel, upstream_rev],
                         ).decode()
                     )
                     git_cache[toplevel] = info
@@ -421,6 +448,14 @@ def ros2nix(args):
                     # kwargs["src_expr"] = f'''let fullSrc = {kwargs["src_expr"]}; in "${{fullSrc}}/{prefix}"'''
                     kwargs["source_root"] = f"${{src.name}}/{prefix}"
 
+                if args.patches:
+                    patches = subprocess.check_output(
+                        f"if ! git diff --quiet {upstream_rev}..HEAD -- .; then git format-patch --relative {upstream_rev}..HEAD; fi",
+                        shell=True, cwd=srcdir,
+                    ).decode().strip().splitlines()
+                elif head != upstream_rev:
+                    warn(f"{toplevel} contains commits not available upstream. Consider using --patches")
+
             else:
                 if args.output_dir is None:
                     kwargs["src_expr"] = "./."
@@ -444,6 +479,7 @@ def ros2nix(args):
                 propagated_build_inputs=propagated_build_inputs | set(args.extra_propagated_build_inputs),
                 check_inputs=check_inputs | set(args.extra_check_inputs),
                 native_build_inputs=native_build_inputs | set(args.extra_native_build_inputs),
+                patches=[f"./{p}" for p in patches],
                 **kwargs,
             )
 
@@ -478,6 +514,20 @@ def ros2nix(args):
             output_file_name = get_output_file_name(source, pkg, args)
             with file_writer(output_file_name, args.compare) as recipe_file:
                 recipe_file.write(derivation_text)
+            for patch in patches:
+                patch_filename = os.path.join(dirname(output_file_name), patch)
+                if not patch_filename in patch_filenames:
+                    patch_filenames.add(patch_filename)
+                else:
+                    # TODO Allow better handling of patch name collisions (e.g. by
+                    # having them in per-package directories, perhaps via
+                    # --output_subdir_as_nix_pkg_name)
+                    msg = f"Patch {patch_filename} already exists"
+                    err(msg)
+                    raise Exception(msg)
+                with file_writer(patch_filename, args.compare) as patch_dest, \
+                     open(os.path.join(os.path.dirname(source), patch), "r") as patch_src:
+                    patch_dest.write(patch_src.read())
             if not args.compare:
                 ok(f"Successfully generated derivation for package '{pkg.name}' as '{output_file_name}'.")
 
