@@ -250,7 +250,7 @@ def ros2nix(args):
     parser.add_argument(
         "--patches",
         action=argparse.BooleanOptionalAction,
-        help="""Add git commits not present in git remote named "origin" as patches in the """
+        help="""Add local git commits not present in git remote named "origin" to patches in the """
         """generated Nix expression. Only allowed with --fetch. This option is experimental """
         """and may be changed in the future.""",
     )

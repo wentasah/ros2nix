@@ -94,12 +94,14 @@ the [Autoware][] project as an example.
 ## ros2nix reference
 
 <!-- `$  python3 -m ros2nix --help` -->
+
 ```
 usage: ros2nix [-h]
                [--output OUTPUT | --output-as-ros-pkg-name | --output-as-nix-pkg-name]
-               [--output-dir OUTPUT_DIR] [--fetch] [--distro DISTRO]
-               [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
-               [--do-check] [--extra-build-inputs DEP1,DEP2,...]
+               [--output-dir OUTPUT_DIR] [--fetch] [--patches | --no-patches]
+               [--distro DISTRO] [--src-param SRC_PARAM]
+               [--source-root SOURCE_ROOT] [--do-check]
+               [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
@@ -132,6 +134,11 @@ options:
                         determined from the local git work tree. sourceRoot
                         attribute is set if needed and not overridden by
                         --source-root. (default: False)
+  --patches, --no-patches
+                        Add local git commits not present in git remote named
+                        "origin" to patches in the generated Nix expression.
+                        Only allowed with --fetch. This option is experimental
+                        and may be changed in the future. (default: None)
   --distro DISTRO       ROS distro (used as a context for evaluation of
                         conditions in package.xml, in the name of the Nix
                         expression and in flake.nix). Note that the generated
