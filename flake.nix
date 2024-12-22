@@ -97,9 +97,15 @@
           ];
           packages = [
             pkgs.bashInteractive
+            (pkgs.bats.withLibraries (p: [
+                p.bats-support
+                p.bats-assert
+                p.bats-file
+            ]))
             pkgs.python3Packages.flake8
             pkgs.python3Packages.flake8-bugbear
             pkgs.python3Packages.isort
+            pkgs.python3Packages.distutils # needed for running ros2nix via python -m
           ];
           ROSDEP_SOURCE_PATH = "${rosdistro}/rosdep/sources.list.d";
           ROSDISTRO_INDEX_URL = "file://${rosdistro}/index-v4.yaml";

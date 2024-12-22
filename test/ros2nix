@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." &> /dev/null && pwd)
+export PYTHONPATH="$DIR:$PYTHONPATH"
+exec python3 -m ros2nix "$@"
