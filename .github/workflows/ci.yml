@@ -14,3 +14,15 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - run: nix flake check
+  tests:
+    name: Test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+      - run: "nix develop -c echo preparing environment"
+      - run: "nix develop -c bats -p test/{test,long_tests}.bats"
