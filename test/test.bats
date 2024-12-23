@@ -11,6 +11,7 @@ load common.bash
 
 @test "fail on non-existent package.xml" {
     run ! ros2nix ./non-existent.xml
+    false
 }
 
 @test "nixify local workspace" {
