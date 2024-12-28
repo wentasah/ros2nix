@@ -100,14 +100,14 @@ def file_writer(path: str, compare: bool):
 
 def generate_overlay(expressions: dict[str, str], args):
     with file_writer(f'{args.output_dir or "."}/overlay.nix', args.compare) as f:
-        print("self: super:\n{", file=f)
+        print("final: prev:\n{", file=f)
         for pkg in sorted(expressions):
             expr = (
                 expressions[pkg]
                 if args.output_dir is None
                 else f"./{os.path.basename(expressions[pkg])}"
             )
-            print(f"  {pkg} = super.callPackage {expr} {{}};", file=f)
+            print(f"  {pkg} = final.callPackage {expr} {{}};", file=f)
         print("}", file=f)
 
 
@@ -119,9 +119,9 @@ ros_distro_overlays_def = dedent(
       // builtins.mapAttrs (
         rosDistro: rosPkgs: if rosPkgs ? overrideScope then rosPkgs.overrideScope rosOverlay else rosPkgs
       ) rosPackages;
-    rosDistroOverlays = self: super: {
+    rosDistroOverlays = final: prev: {
       # Apply the overlay to multiple ROS distributions
-      rosPackages = applyDistroOverlay (import ./overlay.nix) super.rosPackages;
+      rosPackages = applyDistroOverlay (import ./overlay.nix) prev.rosPackages;
     };
 """
 ).strip()
