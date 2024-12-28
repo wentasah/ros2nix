@@ -97,3 +97,19 @@ load common.bash
     assert_failure
     assert_line --partial "Patch ./0001-test-patch.patch already exists"
 }
+
+@test "--fetch --patches with two changes, each for different package " {
+    git clone https://github.com/wentasah/ros2nix
+    pushd ros2nix
+    sed -i -e 's/hello world/hello patch/' test/ws/src/ros_node/src/node.cpp
+    git commit -m 'node patch' -- test/ws/src/ros_node/src/node.cpp
+    sed -i -e '1a// comment' test/ws/src/library/src/library.cpp
+    git commit -m 'library patch' -- test/ws/src/library/src/library.cpp
+    popd
+    ros2nix --output-as-nix-pkg-name --fetch --patches $(find "ros2nix/test/ws/src" -name package.xml)
+    assert_file_contains ./library.nix library-patch\.patch
+    assert_file_contains ./ros-node.nix node-patch\.patch
+    assert_file_not_contains ./library.nix node-patch\.patch
+    assert_file_not_contains ./ros-node.nix library-patch\.patch
+    nix-build -A rosPackages.jazzy.ros-node
+}
