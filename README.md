@@ -89,6 +89,21 @@ the [Autoware][] project as an example.
 > configuration, you may need to add `--experimental-features
 > 'nix-command flakes'`).
 
+3. If some packages need changes, you can generate Nix expressions
+   with appropriate patches. Commit the needed changes and run
+   `ros2nix` with the `--patches` flag, e.g.:
+
+   ```sh
+   pushd autoware/src/...package...
+   $EDITOR some-file.cxx
+   git commit some-file.cxx
+   popd
+   ros2nix --output-as-nix-pkg-name --fetch --patches $(find -name package.xml|grep -v ament_cmake)
+   ```
+
+   An example of the resulting Nix expression can be seen
+   [here](https://github.com/wentasah/autoware.nix/blob/68772be6c4c263cfa213921e205f27f68dc4826a/pkgs/autoware-universe-utils.nix#L15-L18).
+
 [Autoware]: https://autoware.org/
 
 ## ros2nix reference
