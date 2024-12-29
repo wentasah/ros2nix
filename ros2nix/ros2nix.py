@@ -450,7 +450,10 @@ def ros2nix(args):
 
                 if args.patches:
                     patches = subprocess.check_output(
-                        f"for i in $(git rev-list --reverse --relative {upstream_rev}..HEAD -- .); do git format-patch --zero-commit --relative -1 $i; done",
+                        dedent(f"""
+                          for i in $(git rev-list --reverse --relative {upstream_rev}..HEAD -- .); do
+                            git format-patch --zero-commit --relative --no-signature -1 $i
+                          done"""),
                         shell=True, cwd=srcdir,
                     ).decode().strip().splitlines()
                 elif head != upstream_rev:
