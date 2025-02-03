@@ -16,7 +16,7 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from textwrap import dedent, indent
-from typing import Iterable, Set
+from typing import Iterable, Set, List
 
 from catkin_pkg.package import Package, parse_package_string
 from superflore.exceptions import UnresolvedDependency
@@ -247,6 +247,13 @@ def ros2nix(args):
         "The fetch function and its parameters are determined from the local git work tree. "
         "sourceRoot attribute is set if needed and not overridden by --source-root.",
     )
+
+    parser.add_argument(
+        "--use-package-git-hash",
+        action="store_true",
+        help="When using --fetch, use the git hash of the package sub-directory instead of the one of the upstream repo."
+        "This will lead to longer generation time and multiple source checkouts when building but will safe rebuilds of packages that have not changed."
+    )
     parser.add_argument(
         "--patches",
         action=argparse.BooleanOptionalAction,
@@ -390,40 +397,44 @@ def ros2nix(args):
                 kwargs["src_expr"] = args.src_param
             elif args.fetch:
                 srcdir = os.path.dirname(source) or "."
-                url = subprocess.check_output(
-                    "git config remote.origin.url".split(), cwd=srcdir
-                ).decode().strip()
 
-                prefix = subprocess.check_output(
-                    "git rev-parse --show-prefix".split(), cwd=srcdir
-                ).decode().strip()
+                def check_output(cmd: List[str]):
+                    return subprocess.check_output(cmd, cwd=srcdir).decode().strip()
 
-                toplevel = subprocess.check_output(
-                    "git rev-parse --show-toplevel".split(), cwd=srcdir
-                ).decode().strip()
+                url = check_output("git config remote.origin.url".split())
 
-                head = subprocess.check_output(
-                    "git rev-parse HEAD".split(), cwd=srcdir
-                ).decode().strip()
+                prefix = check_output("git rev-parse --show-prefix".split())
 
-                if toplevel in git_cache:
-                    info = git_cache[toplevel]
+                toplevel = check_output("git rev-parse --show-toplevel".split())
+
+                head = check_output("git rev-parse HEAD".split())
+
+                def merge_base_to_upstream(commit: str)->str:
+                    return subprocess.check_output(f"git merge-base {head} $(git for-each-ref refs/remotes/origin --format='%(objectname)')", cwd=srcdir,shell=True).decode().strip()
+
+                if args.use_package_git_hash:
+                    # we need to get merge_base again to filter out applied patches from the package git hash
+                    merge_base = merge_base_to_upstream(head)
+                    head = check_output(f"git rev-list {merge_base} -1 -- .".split())
+
+                key = toplevel
+                if args.use_package_git_hash:
+                    key= f"{toplevel}/{head}"
+                if key in git_cache:
+                    info = git_cache[key]
                     upstream_rev = info["rev"]
                 else:
                     # Latest commit present in the upstream repo. If
                     # the local repository doesn't have additional
                     # commits, it is the same as HEAD. Should work
                     # even with detached HEAD.
-                    upstream_rev = subprocess.check_output(
-                        "git merge-base HEAD $(git for-each-ref refs/remotes/origin --format='%(objectname)')",
-                        shell=True, cwd=srcdir
-                    ).decode().strip()
+                    upstream_rev = merge_base_to_upstream(head)
                     info = json.loads(
                         subprocess.check_output(
                             ["nix-prefetch-git", "--quiet", toplevel, upstream_rev],
                         ).decode()
                     )
-                    git_cache[toplevel] = info
+                    git_cache[key] = info
 
                 match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
                 if match is not None:
