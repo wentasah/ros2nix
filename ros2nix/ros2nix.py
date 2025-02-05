@@ -417,11 +417,8 @@ def ros2nix(args):
                     merge_base = merge_base_to_upstream(head)
                     head = check_output(f"git rev-list {merge_base} -1 -- .".split())
 
-                key = toplevel
-                if args.use_package_git_hash:
-                    key= f"{toplevel}/{head}"
-                if key in git_cache:
-                    info = git_cache[key]
+                if not args.use_package_git_hash and toplevel in git_cache: #only use cache if not using seperate checkout per package
+                    info = git_cache[toplevel]
                     upstream_rev = info["rev"]
                 else:
                     # Latest commit present in the upstream repo. If
@@ -431,12 +428,13 @@ def ros2nix(args):
                     upstream_rev = merge_base_to_upstream(head)
                     info = json.loads(
                         subprocess.check_output(
-                            ["nix-prefetch-git", "--quiet", toplevel, upstream_rev],
+                            ["nix-prefetch-git", "--quiet"]+ (["--sparse-checkout", prefix] if (prefix and args.use_package_git_hash)  else [])+[ toplevel, upstream_rev],
                         ).decode()
                     )
-                    git_cache[key] = info
+                    git_cache[toplevel] = info
 
                 match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
+                sparse_checkout = f"sparseCheckout = [\"{prefix}\"];" if (prefix and args.use_package_git_hash) else ""
                 if match is not None:
                     kwargs["src_param"] = "fetchFromGitHub"
                     kwargs["src_expr"] = dedent(f'''
@@ -444,7 +442,8 @@ def ros2nix(args):
                         owner = "{match["owner"]}";
                         repo = "{match["repo"]}";
                         rev = "{info["rev"]}";
-                        sha256 = "{info["sha256"]}";
+                        sha256 = "{info["sha256"]}"; 
+                        {sparse_checkout}
                       }}''').strip()
                 else:
                     kwargs["src_param"] = "fetchgit"
@@ -453,6 +452,7 @@ def ros2nix(args):
                         url = "{url}";
                         rev = "{info["rev"]}";
                         sha256 = "{info["sha256"]}";
+                        {sparse_checkout}
                       }}''').strip()
 
                 if prefix:
