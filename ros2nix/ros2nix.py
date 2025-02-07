@@ -402,14 +402,11 @@ def ros2nix(args):
                     return subprocess.check_output(cmd, cwd=srcdir).decode().strip()
 
                 url = check_output("git config remote.origin.url".split())
-
                 prefix = check_output("git rev-parse --show-prefix".split())
-
                 toplevel = check_output("git rev-parse --show-toplevel".split())
-
                 head = check_output("git rev-parse HEAD".split())
 
-                def merge_base_to_upstream(commit: str)->str:
+                def merge_base_to_upstream(commit: str) -> str:
                     return subprocess.check_output(f"git merge-base {head} $(git for-each-ref refs/remotes/origin --format='%(objectname)')", cwd=srcdir,shell=True).decode().strip()
 
                 if args.use_package_git_hash:
@@ -417,7 +414,7 @@ def ros2nix(args):
                     merge_base = merge_base_to_upstream(head)
                     head = check_output(f"git rev-list {merge_base} -1 -- .".split())
 
-                if not args.use_package_git_hash and toplevel in git_cache: #only use cache if not using seperate checkout per package
+                if not args.use_package_git_hash and toplevel in git_cache: #only use cache if not using separate checkout per package
                     info = git_cache[toplevel]
                     upstream_rev = info["rev"]
                 else:
@@ -428,7 +425,13 @@ def ros2nix(args):
                     upstream_rev = merge_base_to_upstream(head)
                     info = json.loads(
                         subprocess.check_output(
-                            ["nix-prefetch-git", "--quiet"]+ (["--sparse-checkout", prefix] if (prefix and args.use_package_git_hash)  else [])+[ toplevel, upstream_rev],
+                            ["nix-prefetch-git", "--quiet"]
+                            + (
+                                ["--sparse-checkout", prefix]
+                                if prefix and args.use_package_git_hash
+                                else []
+                            )
+                            + [toplevel, upstream_rev],
                         ).decode()
                     )
                     git_cache[toplevel] = info
@@ -442,7 +445,7 @@ def ros2nix(args):
                         owner = "{match["owner"]}";
                         repo = "{match["repo"]}";
                         rev = "{info["rev"]}";
-                        sha256 = "{info["sha256"]}"; 
+                        sha256 = "{info["sha256"]}";
                         {sparse_checkout}
                       }}''').strip()
                 else:
