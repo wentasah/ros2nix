@@ -213,6 +213,9 @@ def comma_separated(arg: str) -> list[str]:
     return [i.strip() for i in arg.split(",")]
 
 
+def strip_empty_lines(text: str) -> str:
+    return os.linesep.join([s for s in text.splitlines() if s and not s.isspace()])
+
 def ros2nix(args):
     parser = argparse.ArgumentParser(
         prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -440,23 +443,23 @@ def ros2nix(args):
                 sparse_checkout = f"sparseCheckout = [\"{prefix}\"];" if (prefix and args.use_package_git_hash) else ""
                 if match is not None:
                     kwargs["src_param"] = "fetchFromGitHub"
-                    kwargs["src_expr"] = dedent(f'''
+                    kwargs["src_expr"] = strip_empty_lines(dedent(f'''
                       fetchFromGitHub {{
                         owner = "{match["owner"]}";
                         repo = "{match["repo"]}";
                         rev = "{info["rev"]}";
                         sha256 = "{info["sha256"]}";
                         {sparse_checkout}
-                      }}''').strip()
+                      }}''')).strip()
                 else:
                     kwargs["src_param"] = "fetchgit"
-                    kwargs["src_expr"] = dedent(f'''
+                    kwargs["src_expr"] = strip_empty_lines(dedent(f'''
                       fetchgit {{
                         url = "{url}";
                         rev = "{info["rev"]}";
                         sha256 = "{info["sha256"]}";
                         {sparse_checkout}
-                      }}''').strip()
+                      }}''')).strip()
 
                 if prefix:
                     # kwargs["src_expr"] = f'''let fullSrc = {kwargs["src_expr"]}; in "${{fullSrc}}/{prefix}"'''
