@@ -252,10 +252,10 @@ def ros2nix(args):
     )
 
     parser.add_argument(
-        "--use-package-git-hash",
+        "--use-per-package-src",
         action="store_true",
-        help="When using --fetch, use the git hash of the package sub-directory instead of the one of the upstream repo."
-        "This will lead to longer generation time and multiple source checkouts when building but will safe rebuilds of packages that have not changed."
+        help="When using --fetch, fetch only the package sub-directory instead of the whole repo. "
+        "For repos with multiple packages, this will avoid rebuilds of unchanged packages at the cost of longer generation time."
     )
     parser.add_argument(
         "--patches",
@@ -412,12 +412,12 @@ def ros2nix(args):
                 def merge_base_to_upstream(commit: str) -> str:
                     return subprocess.check_output(f"git merge-base {head} $(git for-each-ref refs/remotes/origin --format='%(objectname)')", cwd=srcdir,shell=True).decode().strip()
 
-                if args.use_package_git_hash:
+                if args.use_per_package_src:
                     # we need to get merge_base again to filter out applied patches from the package git hash
                     merge_base = merge_base_to_upstream(head)
                     head = check_output(f"git rev-list {merge_base} -1 -- .".split())
 
-                if not args.use_package_git_hash and toplevel in git_cache: #only use cache if not using separate checkout per package
+                if not args.use_per_package_src and toplevel in git_cache:  # only use cache if not using separate checkout per package
                     info = git_cache[toplevel]
                     upstream_rev = info["rev"]
                 else:
@@ -431,7 +431,7 @@ def ros2nix(args):
                             ["nix-prefetch-git", "--quiet"]
                             + (
                                 ["--sparse-checkout", prefix]
-                                if prefix and args.use_package_git_hash
+                                if prefix and args.use_per_package_src
                                 else []
                             )
                             + [toplevel, upstream_rev],
@@ -440,7 +440,7 @@ def ros2nix(args):
                     git_cache[toplevel] = info
 
                 match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
-                sparse_checkout = f"sparseCheckout = [\"{prefix}\"];" if (prefix and args.use_package_git_hash) else ""
+                sparse_checkout = f"sparseCheckout = [\"{prefix}\"];" if (prefix and args.use_per_package_src) else ""
                 if match is not None:
                     kwargs["src_param"] = "fetchFromGitHub"
                     kwargs["src_expr"] = strip_empty_lines(dedent(f'''

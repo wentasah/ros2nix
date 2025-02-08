@@ -113,7 +113,7 @@ the [Autoware][] project as an example.
 ```
 usage: ros2nix [-h]
                [--output OUTPUT | --output-as-ros-pkg-name | --output-as-nix-pkg-name]
-               [--output-dir OUTPUT_DIR] [--fetch] [--use-package-git-hash]
+               [--output-dir OUTPUT_DIR] [--fetch] [--use-per-package-src]
                [--patches | --no-patches] [--distro DISTRO]
                [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
                [--do-check] [--extra-build-inputs DEP1,DEP2,...]
@@ -149,13 +149,12 @@ options:
                         determined from the local git work tree. sourceRoot
                         attribute is set if needed and not overridden by
                         --source-root. (default: False)
-  --use-package-git-hash
-                        When using --fetch, use the git hash of the package
-                        sub-directory instead of the one of the upstream
-                        repo.This will lead to longer generation time and
-                        multiple source checkouts when building but will safe
-                        rebuilds of packages that have not changed. (default:
-                        False)
+  --use-per-package-src
+                        When using --fetch, fetch only the package sub-
+                        directory instead of the whole repo. For repos with
+                        multiple packages, this will avoid rebuilds of
+                        unchanged packages at the cost of longer generation
+                        time. (default: False)
   --patches, --no-patches
                         Add local git commits not present in git remote named
                         "origin" to patches in the generated Nix expression.
