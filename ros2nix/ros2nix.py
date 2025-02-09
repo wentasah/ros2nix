@@ -410,7 +410,8 @@ def ros2nix(args):
                 head = check_output("git rev-parse HEAD".split())
 
                 def merge_base_to_upstream(commit: str) -> str:
-                    return subprocess.check_output(f"git merge-base {head} $(git for-each-ref refs/remotes/origin --format='%(objectname)')", cwd=srcdir,shell=True).decode().strip()
+                    return subprocess.check_output(f"git merge-base {commit} $(git for-each-ref refs/remotes/origin --format='%(objectname)')",
+                                                   cwd=srcdir, shell=True).decode().strip()
 
                 if args.use_per_package_src:
                     # we need to get merge_base again to filter out applied patches from the package git hash
