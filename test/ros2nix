@@ -1,5 +1,19 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 
-DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." &> /dev/null && pwd)
-export PYTHONPATH="$DIR:$PYTHONPATH"
-exec python3 -m ros2nix "$@"
+# Script for easy testing of ros2nix during development, i.e., without
+# installation. You can add the directory of this script to PATH and
+# run ros2nix command.
+
+import sys
+import re
+from pathlib import Path
+
+if __name__ == '__main__' and __package__ is None:
+    file = Path(__file__).resolve()
+    sys.path.append(str(file.parents[1]))
+
+    from ros2nix.ros2nix import main
+
+    sys.argv[0] = __file__
+    sys.argv[0] = re.sub(r"(-script\.pyw|\.exe)?$", "", sys.argv[0])
+    sys.exit(main())
