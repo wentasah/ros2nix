@@ -430,7 +430,7 @@ def ros2nix(args):
                         subprocess.check_output(
                             ["nix-prefetch-git", "--quiet"]
                             + (
-                                ["--sparse-checkout", prefix]
+                                ["--sparse-checkout", prefix, "--non-cone-mode"]
                                 if prefix and args.use_per_package_src
                                 else []
                             )
@@ -440,7 +440,9 @@ def ros2nix(args):
                     git_cache[toplevel] = info
 
                 match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
-                sparse_checkout = f"sparseCheckout = [\"{prefix}\"];" if (prefix and args.use_per_package_src) else ""
+                sparse_checkout = f"""sparseCheckout = ["{prefix}"];
+                        nonConeMode = true;""" if prefix and args.use_per_package_src else ""
+
                 if match is not None:
                     kwargs["src_param"] = "fetchFromGitHub"
                     kwargs["src_expr"] = strip_empty_lines(dedent(f'''
