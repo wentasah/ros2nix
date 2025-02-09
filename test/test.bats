@@ -113,3 +113,12 @@ load common.bash
     assert_file_not_contains ./ros-node.nix library-patch\.patch
     nix-build -A rosPackages.jazzy.ros-node
 }
+
+@test "--use-per-package-src" {
+    git clone https://github.com/wentasah/ros2nix
+    ros2nix --output-as-nix-pkg-name --fetch --use-per-package-src $(find "ros2nix/test/ws/src" -name package.xml)
+    nix-build -A rosPackages.jazzy.ros-node
+    run ./result/lib/ros_node/node
+    assert_success
+    assert_line --partial "hello world"
+}

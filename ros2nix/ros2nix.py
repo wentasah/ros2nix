@@ -16,7 +16,7 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from textwrap import dedent, indent
-from typing import Iterable, Set
+from typing import Iterable, Set, List
 
 from catkin_pkg.package import Package, parse_package_string
 from superflore.exceptions import UnresolvedDependency
@@ -213,6 +213,9 @@ def comma_separated(arg: str) -> list[str]:
     return [i.strip() for i in arg.split(",")]
 
 
+def strip_empty_lines(text: str) -> str:
+    return os.linesep.join([s for s in text.splitlines() if s and not s.isspace()])
+
 def ros2nix(args):
     parser = argparse.ArgumentParser(
         prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -246,6 +249,13 @@ def ros2nix(args):
         help="Use fetches like fetchFromGitHub in src attribute values. "
         "The fetch function and its parameters are determined from the local git work tree. "
         "sourceRoot attribute is set if needed and not overridden by --source-root.",
+    )
+
+    parser.add_argument(
+        "--use-per-package-src",
+        action="store_true",
+        help="When using --fetch, fetch only the package sub-directory instead of the whole repo. "
+        "For repos with multiple packages, this will avoid rebuilds of unchanged packages at the cost of longer generation time."
     )
     parser.add_argument(
         "--patches",
@@ -390,23 +400,24 @@ def ros2nix(args):
                 kwargs["src_expr"] = args.src_param
             elif args.fetch:
                 srcdir = os.path.dirname(source) or "."
-                url = subprocess.check_output(
-                    "git config remote.origin.url".split(), cwd=srcdir
-                ).decode().strip()
 
-                prefix = subprocess.check_output(
-                    "git rev-parse --show-prefix".split(), cwd=srcdir
-                ).decode().strip()
+                def check_output(cmd: List[str]):
+                    return subprocess.check_output(cmd, cwd=srcdir).decode().strip()
 
-                toplevel = subprocess.check_output(
-                    "git rev-parse --show-toplevel".split(), cwd=srcdir
-                ).decode().strip()
+                url = check_output("git config remote.origin.url".split())
+                prefix = check_output("git rev-parse --show-prefix".split())
+                toplevel = check_output("git rev-parse --show-toplevel".split())
+                head = check_output("git rev-parse HEAD".split())
 
-                head = subprocess.check_output(
-                    "git rev-parse HEAD".split(), cwd=srcdir
-                ).decode().strip()
+                def merge_base_to_upstream(commit: str) -> str:
+                    return subprocess.check_output(f"git merge-base {head} $(git for-each-ref refs/remotes/origin --format='%(objectname)')", cwd=srcdir,shell=True).decode().strip()
 
-                if toplevel in git_cache:
+                if args.use_per_package_src:
+                    # we need to get merge_base again to filter out applied patches from the package git hash
+                    merge_base = merge_base_to_upstream(head)
+                    head = check_output(f"git rev-list {merge_base} -1 -- .".split())
+
+                if not args.use_per_package_src and toplevel in git_cache:  # only use cache if not using separate checkout per package
                     info = git_cache[toplevel]
                     upstream_rev = info["rev"]
                 else:
@@ -414,35 +425,43 @@ def ros2nix(args):
                     # the local repository doesn't have additional
                     # commits, it is the same as HEAD. Should work
                     # even with detached HEAD.
-                    upstream_rev = subprocess.check_output(
-                        "git merge-base HEAD $(git for-each-ref refs/remotes/origin --format='%(objectname)')",
-                        shell=True, cwd=srcdir
-                    ).decode().strip()
+                    upstream_rev = merge_base_to_upstream(head)
                     info = json.loads(
                         subprocess.check_output(
-                            ["nix-prefetch-git", "--quiet", toplevel, upstream_rev],
+                            ["nix-prefetch-git", "--quiet"]
+                            + (
+                                ["--sparse-checkout", prefix, "--non-cone-mode"]
+                                if prefix and args.use_per_package_src
+                                else []
+                            )
+                            + [toplevel, upstream_rev],
                         ).decode()
                     )
                     git_cache[toplevel] = info
 
                 match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
+                sparse_checkout = f"""sparseCheckout = ["{prefix}"];
+                        nonConeMode = true;""" if prefix and args.use_per_package_src else ""
+
                 if match is not None:
                     kwargs["src_param"] = "fetchFromGitHub"
-                    kwargs["src_expr"] = dedent(f'''
+                    kwargs["src_expr"] = strip_empty_lines(dedent(f'''
                       fetchFromGitHub {{
                         owner = "{match["owner"]}";
                         repo = "{match["repo"]}";
                         rev = "{info["rev"]}";
                         sha256 = "{info["sha256"]}";
-                      }}''').strip()
+                        {sparse_checkout}
+                      }}''')).strip()
                 else:
                     kwargs["src_param"] = "fetchgit"
-                    kwargs["src_expr"] = dedent(f'''
+                    kwargs["src_expr"] = strip_empty_lines(dedent(f'''
                       fetchgit {{
                         url = "{url}";
                         rev = "{info["rev"]}";
                         sha256 = "{info["sha256"]}";
-                      }}''').strip()
+                        {sparse_checkout}
+                      }}''')).strip()
 
                 if prefix:
                     # kwargs["src_expr"] = f'''let fullSrc = {kwargs["src_expr"]}; in "${{fullSrc}}/{prefix}"'''
