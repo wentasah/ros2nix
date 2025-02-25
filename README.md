@@ -116,7 +116,8 @@ usage: ros2nix [-h]
                [--output-dir OUTPUT_DIR] [--fetch] [--use-per-package-src]
                [--patches | --no-patches] [--distro DISTRO]
                [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
-               [--do-check] [--extra-build-inputs DEP1,DEP2,...]
+               [--cache-file CACHE_FILE] [--do-check]
+               [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
@@ -172,6 +173,10 @@ options:
                         Set sourceRoot attribute value in the generated Nix
                         expression. Substring '{package_name}' gets replaced
                         with the package name. (default: None)
+  --cache-file CACHE_FILE
+                        Path to a json-file to store sha265 hashes of
+                        checkouts persistently to cache them across generation
+                        runs. (default: None)
   --do-check            Set doCheck attribute to true (default: False)
   --extra-build-inputs DEP1,DEP2,...
                         Additional dependencies to add to the generated Nix
