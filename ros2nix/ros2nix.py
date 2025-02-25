@@ -14,6 +14,7 @@ import os
 import re
 import subprocess
 import sys
+import json
 from contextlib import contextmanager
 from textwrap import dedent, indent
 from typing import Iterable, Set, List
@@ -281,6 +282,9 @@ def ros2nix(args):
         "Substring '{package_name}' gets replaced with the package name.",
     )
     parser.add_argument(
+        "--cache-file", help="Path to a json-file to store sha265 hashes of checkouts persistently to cache them across generation runs."
+    )
+    parser.add_argument(
         "--do-check",
         action="store_true",
         help="Set doCheck attribute to true",
@@ -357,6 +361,9 @@ def ros2nix(args):
 
     expressions: dict[str, str] = {}
     git_cache = {}
+    if args.cache_file is not None and os.path.exists(args.cache_file):
+        with open(args.cache_file) as f:
+            git_cache = json.load(f)
     patch_filenames = set()
 
     for source in args.source:
@@ -418,15 +425,21 @@ def ros2nix(args):
                     merge_base = merge_base_to_upstream(head)
                     head = check_output(f"git rev-list {merge_base} -1 -- .".split())
 
-                if not args.use_per_package_src and toplevel in git_cache:  # only use cache if not using separate checkout per package
-                    info = git_cache[toplevel]
+                def cache_key(prefix, rev):
+                    if args.use_per_package_src:
+                        return f"{prefix}-{rev}"
+                    return rev
+
+
+                # Latest commit present in the upstream repo. If
+                # the local repository doesn't have additional
+                # commits, it is the same as HEAD. Should work
+                # even with detached HEAD.
+                upstream_rev = merge_base_to_upstream(head)
+                if  cache_key(prefix, upstream_rev) in git_cache:
+                    info = git_cache[cache_key(prefix, upstream_rev)]
                     upstream_rev = info["rev"]
                 else:
-                    # Latest commit present in the upstream repo. If
-                    # the local repository doesn't have additional
-                    # commits, it is the same as HEAD. Should work
-                    # even with detached HEAD.
-                    upstream_rev = merge_base_to_upstream(head)
                     info = json.loads(
                         subprocess.check_output(
                             ["nix-prefetch-git", "--quiet"]
@@ -438,7 +451,7 @@ def ros2nix(args):
                             + [toplevel, upstream_rev],
                         ).decode()
                     )
-                    git_cache[toplevel] = info
+                    git_cache[cache_key(prefix, upstream_rev)] = {k : info[k] for k in ["rev", "sha256"]}
 
                 match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
                 sparse_checkout = f"""sparseCheckout = ["{prefix}"];
@@ -567,6 +580,10 @@ def ros2nix(args):
     if args.default or (args.default is None and not args.flake):
         generate_default(args)
         # TODO generate also release.nix (for testing/CI)?
+
+    if args.cache_file is not None:
+        with open(args.cache_file, "w") as f:
+            json.dump(git_cache, f)
 
     if args.compare and compare_failed:
         err("Some files are not up-to-date")
