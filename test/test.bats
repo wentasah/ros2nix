@@ -33,7 +33,7 @@ load common.bash
 }
 
 @test "--flake" {
-    ros2nix --flake $(find ws/src -name package.xml)
+    ros2nix --flake --distro=jazzy $(find ws/src -name package.xml)
     nix flake check path:"${PWD}"
     nix build path:"${PWD}#ros-node"
 }
