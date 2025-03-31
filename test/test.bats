@@ -18,6 +18,12 @@ load common.bash
     nix-build -A rosPackages.humble.ros-node -A rosPackages.jazzy.ros-node -A rosPackages.rolling.ros-node
 }
 
+@test "nixify package in the current directory" {
+    cd ws/src/library
+    ros2nix package.xml
+    nix-build -A rosPackages.jazzy.library
+}
+
 @test "--output-as-nix-pkg-name" {
     ros2nix --output-as-nix-pkg-name $(find ws/src -name package.xml)
     assert [ -f ros-node.nix ]

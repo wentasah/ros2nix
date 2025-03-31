@@ -2,7 +2,7 @@
 # PYTHON_ARGCOMPLETE_OK
 
 # Copyright 2019-2024 Ben Wolsieffer <benwolsieffer@gmail.com>
-# Copyright 2024 Michal Sojka <michal.sojka@cvut.cz>
+# Copyright 2024, 2025 Michal Sojka <michal.sojka@cvut.cz>
 
 from os.path import dirname
 import argcomplete, argparse
@@ -105,9 +105,9 @@ def generate_overlay(expressions: dict[str, str], args):
             expr = (
                 expressions[pkg]
                 if args.output_dir is None
-                else f"./{os.path.basename(expressions[pkg])}"
+                else os.path.basename(expressions[pkg])
             )
-            print(f"  {pkg} = final.callPackage {expr} {{}};", file=f)
+            print(f"  {pkg} = final.callPackage ./{expr} {{}};", file=f)
         print("}", file=f)
 
 
