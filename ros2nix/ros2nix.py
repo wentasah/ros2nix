@@ -14,8 +14,8 @@ import os
 import re
 import subprocess
 import sys
-import json
 from contextlib import contextmanager
+from pathlib import Path
 from textwrap import dedent, indent
 from typing import Iterable, Set, List
 
@@ -25,6 +25,23 @@ from superflore.generators.nix.nix_package import NixPackage
 from superflore.utils import err, ok, resolve_dep, warn
 
 from .nix_expression import NixExpression, NixLicense
+
+
+# Copied from https://github.com/srstevenson/xdg-base-dirs
+# Copyright © Scott Stevenson <scott@stevenson.io>
+# Less than 10 lines, no need to mention full ISC license here.
+def _path_from_env(variable: str, default: Path) -> Path:
+    if (value := os.environ.get(variable)) and (path := Path(value)).is_absolute():
+        return path
+    return default
+
+
+def xdg_cache_home() -> Path:
+    """Return a Path corresponding to XDG_CACHE_HOME."""
+    return _path_from_env("XDG_CACHE_HOME", Path.home() / ".cache")
+
+
+cache_file = xdg_cache_home() / "ros2nix" / "git-cache.json"
 
 
 def resolve_dependencies(deps: Iterable[str]) -> Set[str]:
@@ -282,7 +299,9 @@ def ros2nix(args):
         "Substring '{package_name}' gets replaced with the package name.",
     )
     parser.add_argument(
-        "--cache-file", help="Path to a json-file to store sha265 hashes of checkouts persistently to cache them across generation runs."
+        "--no-cache",
+        action="store_true",
+        help="Don't use cache of git checkout sha265 hashes across generation runs.",
     )
     parser.add_argument(
         "--do-check",
@@ -361,8 +380,8 @@ def ros2nix(args):
 
     expressions: dict[str, str] = {}
     git_cache = {}
-    if args.cache_file is not None and os.path.exists(args.cache_file):
-        with open(args.cache_file) as f:
+    if not args.no_cache and os.path.exists(cache_file):
+        with open(cache_file) as f:
             git_cache = json.load(f)
     patch_filenames = set()
 
@@ -581,8 +600,8 @@ def ros2nix(args):
         generate_default(args)
         # TODO generate also release.nix (for testing/CI)?
 
-    if args.cache_file is not None:
-        with open(args.cache_file, "w") as f:
+    if not args.no_cache:
+        with open(cache_file, "w") as f:
             json.dump(git_cache, f)
 
     if args.compare and compare_failed:
