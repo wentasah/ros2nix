@@ -598,6 +598,7 @@ def ros2nix(args):
         # TODO generate also release.nix (for testing/CI)?
 
     if not args.no_cache:
+        os.makedirs(os.path.dirname(cache_file), exist_ok=True)
         with open(cache_file, "w") as f:
             json.dump(git_cache, f)
 
