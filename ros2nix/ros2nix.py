@@ -179,6 +179,53 @@ import nix-ros-overlay {{
 ''')
 
 
+def generate_shell(args, packages: set[str]):
+    nix_ros_overlay = flakeref_to_expr(args.nix_ros_overlay)
+    with file_writer(f'{args.output_dir or "."}/shell.nix', args.compare) as f:
+        f.write(f'''{{
+  nix-ros-overlay ? {nix_ros_overlay},
+  pkgs ? import nix-ros-overlay {{ }},
+  rosDistro ? "{args.distro}",
+  extraPkgs ? {{ }},
+  extraPaths ? [ ],
+  withPackages ? _: [ ],
+}}:
+pkgs.mkShell {{
+  name = "ros2nix ${{rosDistro}} shell";
+  packages = [
+    (pkgs.rosPackages.${{rosDistro}}.buildEnv {{
+      wrapPrograms = false;
+      paths =
+        [
+          pkgs.colcon
+          pkgs.rosPackages.${{rosDistro}}.ros-core
+        ]
+        ++ (
+          with pkgs;
+          with pkgs.rosPackages.${{rosDistro}};
+          with extraPkgs;
+          [
+            # Dependencies from package.xml files
+{indent('\n'.join(sorted(list(packages))), "            ")}
+          ]
+        )
+        ++ builtins.attrValues extraPkgs
+        ++ extraPaths
+        ++ withPackages (pkgs // pkgs.rosPackages.${{rosDistro}});
+      }}
+    )
+  ];
+  shellHook = ''
+    # Setup ROS 2 shell completion. Doing it in direnv is useless.
+    if [[ ! $DIRENV_IN_ENVRC ]]; then
+        eval "$(${{pkgs.python3Packages.argcomplete}}/bin/register-python-argcomplete ros2)"
+        eval "$(${{pkgs.python3Packages.argcomplete}}/bin/register-python-argcomplete colcon)"
+    fi
+  '';
+}}
+''')
+
+
 def generate_flake(args):
     with file_writer(f'{args.output_dir or "."}/flake.nix', args.compare) as f:
         f.write('''
@@ -205,18 +252,10 @@ def generate_flake(args):
         legacyPackages = pkgs.rosPackages;
         packages = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.${rosDistro};
         checks = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.${rosDistro};
-        devShells.default = pkgs.mkShell {
-          name = "Example project";
-          packages = [
-            pkgs.colcon
-            # ... other non-ROS packages
-            (with pkgs.rosPackages.${rosDistro}; buildEnv {
-              paths = [
-                ros-core
-                # ... other ROS packages
-              ];
-            })
-          ];
+        devShells.default = import ./shell.nix {
+          inherit pkgs rosDistro;
+          extraPkgs = { };
+          extraPaths = [ ];
         };
       });
   nixConfig = {
@@ -344,6 +383,12 @@ def ros2nix(args):
         help="Generate overlay.nix",
     )
     parser.add_argument(
+        "--shell",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Generate shell.nix",
+    )
+    parser.add_argument(
         "--nix-ros-overlay",
         metavar="FLAKEREF",
         default="github:lopsided98/nix-ros-overlay/master",
@@ -384,6 +429,8 @@ def ros2nix(args):
         with open(cache_file) as f:
             git_cache = json.load(f)
     patch_filenames = set()
+    our_pkg_names: set[str] = set()
+    all_dependencies: set[str] = set()
 
     for source in args.source:
         try:
@@ -535,6 +582,14 @@ def ros2nix(args):
                 patches=[f"./{p}" for p in patches],
                 **kwargs,
             )
+            our_pkg_names.add(derivation.name)
+            all_dependencies |= (
+                derivation.build_inputs
+                | derivation.native_build_inputs
+                | derivation.propagated_build_inputs
+                | derivation.propagated_native_build_inputs
+                | derivation.check_inputs
+            )
 
         except Exception as e:
             err(f'Failed to prepare Nix expression from {source}')
@@ -591,6 +646,9 @@ def ros2nix(args):
 
     if args.overlay:
         generate_overlay(expressions, args)
+
+    if args.shell:
+        generate_shell(args, all_dependencies - our_pkg_names)
 
     if args.flake:
         generate_flake(args)
