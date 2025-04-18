@@ -18,6 +18,30 @@ load common.bash
     nix-build -A rosPackages.humble.ros-node -A rosPackages.jazzy.ros-node -A rosPackages.rolling.ros-node
 }
 
+@test "nixify local workspace and build it by colcon in nix-shell" {
+    cd ws
+    ros2nix --distro=jazzy $(find src -name package.xml)
+    nix-shell --run "colcon build"
+}
+
+@test "nix-shell for local workspace with additional ROS package" {
+    ros2nix --distro=jazzy $(find ws/src -name package.xml)
+    nix-shell --arg withPackages 'p: with p; [ compressed-image-transport ]' \
+              --run "ros2 pkg list | grep compressed_image_transport"
+}
+
+@test "nix-shell for local workspace with additional nixpkgs package" {
+    ros2nix --distro=jazzy $(find ws/src -name package.xml)
+    nix-shell --arg withPackages 'p: with p; [ hello ]' \
+              --run "which hello"
+}
+
+@test "nixify local workspace and build it by colcon in nix develop" {
+    cd ws
+    ros2nix --flake --distro=jazzy $(find src -name package.xml)
+    nix develop --command colcon build
+}
+
 @test "nixify package in the current directory" {
     cd ws/src/library
     ros2nix package.xml
