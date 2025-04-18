@@ -444,21 +444,18 @@ def ros2nix(args):
                     merge_base = merge_base_to_upstream(head)
                     head = check_output(f"git rev-list {merge_base} -1 -- .".split())
 
-                def cache_key(prefix, rev):
+                def cache_key(url, prefix):
                     if args.use_per_package_src:
-                        return f"{prefix}-{rev}"
-                    return rev
-
+                        return f"{url}?dir={prefix}"
+                    return url
 
                 # Latest commit present in the upstream repo. If
                 # the local repository doesn't have additional
                 # commits, it is the same as HEAD. Should work
                 # even with detached HEAD.
                 upstream_rev = merge_base_to_upstream(head)
-                if  cache_key(prefix, upstream_rev) in git_cache:
-                    info = git_cache[cache_key(prefix, upstream_rev)]
-                    upstream_rev = info["rev"]
-                else:
+                info = git_cache.get(cache_key(url, prefix))
+                if info is None or info["rev"] != upstream_rev:
                     info = json.loads(
                         subprocess.check_output(
                             ["nix-prefetch-git", "--quiet"]
@@ -470,7 +467,7 @@ def ros2nix(args):
                             + [toplevel, upstream_rev],
                         ).decode()
                     )
-                    git_cache[cache_key(prefix, upstream_rev)] = {k : info[k] for k in ["rev", "sha256"]}
+                    git_cache[cache_key(url, prefix)] = {k : info[k] for k in ["rev", "sha256"]}
 
                 match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
                 sparse_checkout = f"""sparseCheckout = ["{prefix}"];
