@@ -440,8 +440,9 @@ def ros2nix(args):
                                                    cwd=srcdir, shell=True).decode().strip()
 
                 if args.use_per_package_src:
-                    # we need to get merge_base again to filter out applied patches from the package git hash
-                    merge_base = merge_base_to_upstream(head)
+                    # Set head to point to the last commit the subdirectory was changed. This is
+                    # not strictly necessary, but it will increase hit rate of git_cache.
+                    merge_base = merge_base_to_upstream(head) # filter out locally applied patches
                     head = check_output(f"git rev-list {merge_base} -1 -- .".split())
 
                 def cache_key(url, prefix):
