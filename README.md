@@ -35,11 +35,24 @@ you don't have to be concerned with it.
    ```sh
    ros2nix $(find -name package.xml)
    ```
-   This also creates `./overlay.nix` and `./default.nix` for easy
-   integration and/or testing of created packages.
+   This also creates `./shell.nix` for development in the local
+   workspace and `./overlay.nix` and `./default.nix` for easy
+   integration and/or testing of created Nix packages.
 
-2. Try building some of your packages (replace `my-package` with real
-   name):
+2. To build the local workspace in ROS way, run:
+
+   ```sh
+   nix-shell
+   colcon build
+   ```
+
+   If `nix-shell` fails, it might be due to missing packages in
+   `nixpkgs` or `nix-ros-overlay`. Feel free to submit a bug or
+   provide the package in `extraPkgs` argument.
+
+3. To build some of your packages with Nix, replace `my-package` with
+   real name and run:
+
    ```sh
    nix-build -A rosPackages.humble.my-package
    nix-build -A rosPackages.jazzy.my-package
@@ -121,8 +134,9 @@ usage: ros2nix [-h]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
                [--default | --no-default] [--overlay | --no-overlay]
-               [--nix-ros-overlay FLAKEREF] [--nixfmt] [--compare]
-               [--copyright-holder COPYRIGHT_HOLDER] [--license LICENSE]
+               [--shell | --no-shell] [--nix-ros-overlay FLAKEREF] [--nixfmt]
+               [--compare] [--copyright-holder COPYRIGHT_HOLDER]
+               [--license LICENSE]
                package.xml [package.xml ...]
 
 positional arguments:
@@ -193,6 +207,7 @@ options:
                         None)
   --overlay, --no-overlay
                         Generate overlay.nix (default: True)
+  --shell, --no-shell   Generate shell.nix (default: True)
   --nix-ros-overlay FLAKEREF
                         Flake reference of nix-ros-overlay. You may want to
                         change the branch from master to develop or use your
