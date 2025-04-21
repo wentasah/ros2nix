@@ -199,6 +199,10 @@ pkgs.mkShell {{
         [
           pkgs.colcon
           pkgs.rosPackages.${{rosDistro}}.ros-core
+
+          # Work around https://github.com/lopsided98/nix-ros-overlay/pull/624
+          pkgs.rosPackages.${{rosDistro}}.ament-cmake-core
+          pkgs.rosPackages.${{rosDistro}}.python-cmake-module
         ]
         ++ (
           with pkgs;
