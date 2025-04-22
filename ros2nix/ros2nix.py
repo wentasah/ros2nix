@@ -15,6 +15,7 @@ import re
 import subprocess
 import sys
 from contextlib import contextmanager
+from pathlib import Path
 from textwrap import dedent, indent
 from typing import Iterable, Set, List
 
@@ -24,6 +25,23 @@ from superflore.generators.nix.nix_package import NixPackage
 from superflore.utils import err, ok, resolve_dep, warn
 
 from .nix_expression import NixExpression, NixLicense
+
+
+# Copied from https://github.com/srstevenson/xdg-base-dirs
+# Copyright © Scott Stevenson <scott@stevenson.io>
+# Less than 10 lines, no need to mention full ISC license here.
+def _path_from_env(variable: str, default: Path) -> Path:
+    if (value := os.environ.get(variable)) and (path := Path(value)).is_absolute():
+        return path
+    return default
+
+
+def xdg_cache_home() -> Path:
+    """Return a Path corresponding to XDG_CACHE_HOME."""
+    return _path_from_env("XDG_CACHE_HOME", Path.home() / ".cache")
+
+
+cache_file = xdg_cache_home() / "ros2nix" / "git-cache.json"
 
 
 def resolve_dependencies(deps: Iterable[str]) -> Set[str]:
@@ -281,6 +299,11 @@ def ros2nix(args):
         "Substring '{package_name}' gets replaced with the package name.",
     )
     parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Don't use cache of git checkout sha265 hashes across generation runs.",
+    )
+    parser.add_argument(
         "--do-check",
         action="store_true",
         help="Set doCheck attribute to true",
@@ -357,6 +380,9 @@ def ros2nix(args):
 
     expressions: dict[str, str] = {}
     git_cache = {}
+    if not args.no_cache and os.path.exists(cache_file):
+        with open(cache_file) as f:
+            git_cache = json.load(f)
     patch_filenames = set()
 
     for source in args.source:
@@ -414,19 +440,23 @@ def ros2nix(args):
                                                    cwd=srcdir, shell=True).decode().strip()
 
                 if args.use_per_package_src:
-                    # we need to get merge_base again to filter out applied patches from the package git hash
-                    merge_base = merge_base_to_upstream(head)
+                    # Set head to point to the last commit the subdirectory was changed. This is
+                    # not strictly necessary, but it will increase hit rate of git_cache.
+                    merge_base = merge_base_to_upstream(head) # filter out locally applied patches
                     head = check_output(f"git rev-list {merge_base} -1 -- .".split())
 
-                if not args.use_per_package_src and toplevel in git_cache:  # only use cache if not using separate checkout per package
-                    info = git_cache[toplevel]
-                    upstream_rev = info["rev"]
-                else:
-                    # Latest commit present in the upstream repo. If
-                    # the local repository doesn't have additional
-                    # commits, it is the same as HEAD. Should work
-                    # even with detached HEAD.
-                    upstream_rev = merge_base_to_upstream(head)
+                def cache_key(url, prefix):
+                    if args.use_per_package_src:
+                        return f"{url}?dir={prefix}"
+                    return url
+
+                # Latest commit present in the upstream repo. If
+                # the local repository doesn't have additional
+                # commits, it is the same as HEAD. Should work
+                # even with detached HEAD.
+                upstream_rev = merge_base_to_upstream(head)
+                info = git_cache.get(cache_key(url, prefix))
+                if info is None or info["rev"] != upstream_rev:
                     info = json.loads(
                         subprocess.check_output(
                             ["nix-prefetch-git", "--quiet"]
@@ -438,7 +468,7 @@ def ros2nix(args):
                             + [toplevel, upstream_rev],
                         ).decode()
                     )
-                    git_cache[toplevel] = info
+                    git_cache[cache_key(url, prefix)] = {k : info[k] for k in ["rev", "sha256"]}
 
                 match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
                 sparse_checkout = f"""sparseCheckout = ["{prefix}"];
@@ -567,6 +597,11 @@ def ros2nix(args):
     if args.default or (args.default is None and not args.flake):
         generate_default(args)
         # TODO generate also release.nix (for testing/CI)?
+
+    if not args.no_cache:
+        os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+        with open(cache_file, "w") as f:
+            json.dump(git_cache, f)
 
     if args.compare and compare_failed:
         err("Some files are not up-to-date")
