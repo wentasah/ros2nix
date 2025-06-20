@@ -191,6 +191,7 @@ def generate_shell(args, packages: set[str], our_cmd_line: str):
   extraPkgs ? {{ }},
   extraPaths ? [ ],
   withPackages ? _: [ ],
+  extraShellHook ? "",
 }}:
 pkgs.mkShell {{
   name = "ros2nix ${{rosDistro}} shell";
@@ -227,7 +228,7 @@ pkgs.mkShell {{
         eval "$(${{pkgs.python3Packages.argcomplete}}/bin/register-python-argcomplete ros2)"
         eval "$(${{pkgs.python3Packages.argcomplete}}/bin/register-python-argcomplete colcon)"
     fi
-  '';
+  '' + extraShellHook;
 }}
 ''')
 

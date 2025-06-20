@@ -75,6 +75,12 @@ EOF
     nix-shell my-shell.nix --pure --run "my-script"
 }
 
+@test "nix-shell for local workspace with extraShellHook" {
+    ros2nix --distro=jazzy $(find ws/src -name package.xml)
+    nix-shell --argstr extraShellHook 'VAR=123' \
+              --run '[[ $VAR -eq 123 ]] || echo "VAR value incorrect"'
+}
+
 @test "nixify local workspace and build it by colcon in nix develop" {
     cd ws
     ros2nix --flake --distro=jazzy $(find src -name package.xml)
