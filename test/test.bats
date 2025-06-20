@@ -36,6 +36,45 @@ load common.bash
               --run "which hello"
 }
 
+@test "nix-shell for local workspace with additional extraPaths" {
+    cd ws
+    ros2nix --distro=jazzy $(find src -name package.xml)
+    cat <<EOF > my-shell.nix
+{
+  nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
+  pkgs ? import nix-ros-overlay { },
+  sterm ? builtins.fetchTarball "https://github.com/wentasah/sterm/archive/refs/heads/master.tar.gz",
+}:
+import ./shell.nix {
+  inherit pkgs;
+  extraPaths = [
+    (import sterm { inherit pkgs; })
+  ];
+}
+EOF
+    nix-shell my-shell.nix --pure --run "sterm -h"
+}
+
+@test "nix-shell for local workspace with additional extraPkgs" {
+    cd ws
+    ros2nix --distro=jazzy $(find src -name package.xml)
+    cat <<EOF > my-shell.nix
+{
+  nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
+  pkgs ? import nix-ros-overlay { },
+}:
+import ./shell.nix {
+  inherit pkgs;
+  extraPkgs = {
+    my-package = pkgs.writeScriptBin "my-script" ''
+      echo "hi"
+    '';
+  };
+}
+EOF
+    nix-shell my-shell.nix --pure --run "my-script"
+}
+
 @test "nixify local workspace and build it by colcon in nix develop" {
     cd ws
     ros2nix --flake --distro=jazzy $(find src -name package.xml)
