@@ -1,9 +1,17 @@
 # ros2nix
 
-Tool to convert [ROS][] `package.xml` to [Nix][] expressions
-compatible with [nix-ros-overlay][]. Under the hood, it uses
-[rosdep][] to convert ROS package names to nixpkgs attributes so that
-you don't have to be concerned with it.
+Tool that simplifies using [ROS][] with the [Nix][] package manager
+compatible with [nix-ros-overlay][]. It has two main use cases:
+
+- Convert ROS `package.xml` files to Nix expressions so that you can
+  build your ROS packages with Nix.
+
+- Create Nix-based development environment for compiling ROS
+  workspaces with e.g. `colcon`. The environment contains all
+  dependencies declared in `package.xml` files in the workspace.
+
+Under the hood, `ros2nix` uses [rosdep][] to convert ROS package names
+to nixpkgs attributes, so that you don't have to be concerned with it.
 
 [rosdep]: https://github.com/ros-infrastructure/rosdep
 
@@ -48,7 +56,7 @@ you don't have to be concerned with it.
 
    If `nix-shell` fails, it might be due to missing packages in
    `nixpkgs` or `nix-ros-overlay`. Feel free to submit a bug or
-   provide the package in `extraPkgs` argument.
+   provide the package in `extraPkgs` argument as shown below.
 
 3. To build some of your packages with Nix, replace `my-package` with
    a real name and run:
@@ -57,8 +65,7 @@ you don't have to be concerned with it.
    nix-build -A rosPackages.humble.my-package
    nix-build -A rosPackages.jazzy.my-package
    ```
-   If the build succeeds, you're probably done. Failures can be caused
-   by several things:
+   Build failures can be caused by several things:
    - Missing dependencies in your `package.xml`
    - Missing/stale `nixos` keys for nixpkgs packages in [rosdep yaml database][]
    - Bugs in your packages (e.g. in `CMakeLists.txt`)
@@ -83,11 +90,12 @@ the [Autoware][] project as an example.
 
    ros2nix --output-as-nix-pkg-name --fetch $(find -name package.xml|grep -v ament_cmake)
    ```
-   This will create all Nix expressions in the current directory and
-   named according to their package names. The expressions will
-   _fetch_ the source code from GitHub instead of from local
-   filesystem. Note that we ignore ament_cmake packages forked by
-   autoware since they break the build.
+
+   This will create all Nix expressions in the current directory. The
+   files will be named according to their package names. The
+   expressions will _fetch_ the source code from GitHub instead of
+   from the local filesystem. Note that we ignore ament_cmake packages
+   forked by autoware since they break the build.
 
 2. Try building some packages:
    ```
@@ -123,15 +131,16 @@ the [Autoware][] project as an example.
 
 By default, `ros2nix` generates `shell.nix` file, which declares
 development environment for compilation of your workspace. In the
-simplest case, you can enter it by running `nix-shell`. For greater
-flexibility, you can extend it as described below.
+simplest case, you can enter it by running `nix-shell` and run
+`colcon`. For greater flexibility, you can extend it as described
+below.
 
 ### ROS distribution
 
-By default, `nix-shell` enters the ROS distribution which was
-specified by `--distro` option of `ros2nix`, which defaults to
-`rolling`. If you want to change it, rerun `ros2nix --distro=...` with
-different value.
+By default, `nix-shell` environment will contain the ROS distribution
+which was specified by the `--distro` option passed to `ros2nix`,
+which defaults to `rolling`. If you want to change it, rerun `ros2nix`
+with different `--distro=...` value.
 
 Alternatively, you can override the default distribution when invoking
 `nix-shell`:
@@ -141,24 +150,91 @@ Alternatively, you can override the default distribution when invoking
 ### Adding other packages
 
 The generated `shell.nix` has three parameters `withPackages`,
-`extraPkgs` and `extraPaths`, which you can use to extend or modify
-the development environment.
+`extraPkgs` and `extraPaths` that allows you to extend or modify the
+development environment.
 
-Use `withPackages` to add additional packages. Define a Nix function,
-which returns the packages from the given package set (`p` below):
+Use `withPackages` to add additional packages to the environment.
+Define a Nix function, which returns the packages from the given
+package set (`p` below):
 
     nix-shell --arg withPackages 'p: with p; [ compressed-image-transport ]'
 
 This ensures that `compressed-image-transport` plugin will be
-available in your development environment. You can use more (space
-separated) packages inside `[ ]`. Put there any [ROS
+available in your development environment. You can use more space
+separated packages inside `[ ]`. You can use any [ROS
 package](https://index.ros.org/) (just replace `_` with `-`) or any
-package from [nixpkgs](https://search.nixos.org/packages).
+package from [nixpkgs](https://search.nixos.org/packages). If a
+package with the same name is present in both ROS and nixpkgs, the ROS
+package takes precedence.
 
 Parameters `extraPkgs` and `extraPaths` are meant for programmatic use
 and are described in the next section.
 
 ### Making the changes permanent
+
+To make the changes permanent, create a new file, say `my-shell.nix`
+and import the generated `shell.nix` as follows:
+
+```nix
+import ./shell.nix {
+  withPackages = p: with p; [ compressed-image-transport ];
+}
+```
+
+Then enter the extended environment by running:
+
+    nix-shell my-shell.nix
+
+A similar effect can be achieved with the `extraPaths` parameter. It
+gives you full control over the packages. For example, you can
+explicitly specify a package from nixpkgs (or other repository) even
+if a same-named ROS package would override it when using
+`withPackages`.
+
+```nix
+{
+  nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
+  pkgs ? import nix-ros-overlay { },
+  sterm ? builtins.fetchTarball "https://github.com/wentasah/sterm/archive/refs/heads/master.tar.gz",
+}:
+import ./shell.nix {
+  inherit pkgs;
+  extraPaths = [
+    pkgs.clang-tools
+    (import sterm { inherit pkgs; })
+  ];
+}
+```
+
+The above example adds to the development environment `clangd` (from
+`clang-tools` in nixpkgs) and `sterm` tool from a 3rd party
+repository.
+
+### Providing missing dependencies
+
+If your ROS packages depend on a package, which is neither in ROS nor
+in nixpkgs, `nix-shell` fails with errors like: `error: undefined
+variable 'my-package`. You can use the `extraPkgs` parameter to
+provide such missing packages. For example:
+
+```nix
+{
+  nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
+  pkgs ? import nix-ros-overlay { },
+}:
+import ./shell.nix {
+  inherit pkgs;
+  extraPkgs = {
+    my-package = pkgs.callPackage ./my-package { };
+    broken-package = null;
+  };
+}
+```
+
+This ensures that `my-package` will be available in the environment as
+defined in `./my-package/default.nix`. Additionally, `broken-package`
+will be replaced with `null`, which can be useful for resolving build
+failures in optional dependencies.
 
 ### Running graphical applications
 
