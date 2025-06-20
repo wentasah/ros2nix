@@ -19,14 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            extra-substituters = https://ros.cachix.org
+            extra-trusted-public-keys = ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=
       - run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          mkdir -p .config/nix
-          cat <<EOF > .config/nix/nix.conf
-          extra-substituters = https://ros.cachix.org
-          extra-trusted-public-keys = ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=
-          EOF
       - run: "nix develop -c echo preparing environment"
       - run: "set -o pipefail; nix develop -c bats test/{test,long_tests}.bats | tee tests.tap"
       - uses: pcolby/tap-summary@v1
