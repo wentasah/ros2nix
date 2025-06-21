@@ -27,7 +27,8 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
       - run: "nix develop -c echo preparing environment"
-      - run: |
+      - name: "Run tests"
+        run: |
           mkdir out
           set -o pipefail
           nix develop -c bats test/{test,long_tests}.bats --timing --gather-test-outputs-in $PWD/out | tee tests.tap
