@@ -18,6 +18,75 @@ load common.bash
     nix-build -A rosPackages.humble.ros-node -A rosPackages.jazzy.ros-node -A rosPackages.rolling.ros-node
 }
 
+@test "nixify local workspace and build it by colcon in nix-shell" {
+    cd ws
+    ros2nix --distro=jazzy $(find src -name package.xml)
+    nix-shell --run "colcon build"
+}
+
+@test "nix-shell for local workspace with additional ROS package" {
+    ros2nix --distro=jazzy $(find ws/src -name package.xml)
+    nix-shell --arg withPackages 'p: with p; [ compressed-image-transport ]' \
+              --run "ros2 pkg list | grep compressed_image_transport"
+}
+
+@test "nix-shell for local workspace with additional nixpkgs package" {
+    ros2nix --distro=jazzy $(find ws/src -name package.xml)
+    nix-shell --arg withPackages 'p: with p; [ hello ]' \
+              --run "which hello"
+}
+
+@test "nix-shell for local workspace with additional extraPaths" {
+    cd ws
+    ros2nix --distro=jazzy $(find src -name package.xml)
+    cat <<EOF > my-shell.nix
+{
+  nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
+  pkgs ? import nix-ros-overlay { },
+  sterm ? builtins.fetchTarball "https://github.com/wentasah/sterm/archive/refs/heads/master.tar.gz",
+}:
+import ./shell.nix {
+  inherit pkgs;
+  extraPaths = [
+    (import sterm { inherit pkgs; })
+  ];
+}
+EOF
+    nix-shell my-shell.nix --pure --run "sterm -h"
+}
+
+@test "nix-shell for local workspace with additional extraPkgs" {
+    cd ws
+    ros2nix --distro=jazzy $(find src -name package.xml)
+    cat <<EOF > my-shell.nix
+{
+  nix-ros-overlay ? builtins.fetchTarball "https://github.com/lopsided98/nix-ros-overlay/archive/master.tar.gz",
+  pkgs ? import nix-ros-overlay { },
+}:
+import ./shell.nix {
+  inherit pkgs;
+  extraPkgs = {
+    my-package = pkgs.writeScriptBin "my-script" ''
+      echo "hi"
+    '';
+  };
+}
+EOF
+    nix-shell my-shell.nix --pure --run "my-script"
+}
+
+@test "nix-shell for local workspace with extraShellHook" {
+    ros2nix --distro=jazzy $(find ws/src -name package.xml)
+    nix-shell --argstr extraShellHook 'VAR=123' \
+              --run '[[ $VAR -eq 123 ]] || echo "VAR value incorrect"'
+}
+
+@test "nixify local workspace and build it by colcon in nix develop" {
+    cd ws
+    ros2nix --flake --distro=jazzy $(find src -name package.xml)
+    nix develop --command colcon build
+}
+
 @test "nixify package in the current directory" {
     cd ws/src/library
     ros2nix package.xml

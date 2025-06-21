@@ -19,10 +19,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            extra-substituters = https://attic.iid.ciirc.cvut.cz/ros
+            extra-trusted-public-keys = ros:JR95vUYsShSqfA1VTYoFt1Nz6uXasm5QrcOsGry9f6Q=
       - run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
       - run: "nix develop -c echo preparing environment"
-      - run: "set -o pipefail; nix develop -c bats test/{test,long_tests}.bats | tee tests.tap"
+      - name: "Run tests"
+        run: |
+          mkdir out
+          set -o pipefail
+          nix develop -c bats test/{test,long_tests}.bats --timing --gather-test-outputs-in $PWD/out | tee tests.tap
       - uses: pcolby/tap-summary@v1
         if: always()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logs
+          path: |
+            out
