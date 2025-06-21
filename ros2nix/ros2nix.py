@@ -279,6 +279,13 @@ def comma_separated(arg: str) -> list[str]:
 def strip_empty_lines(text: str) -> str:
     return os.linesep.join([s for s in text.splitlines() if s and not s.isspace()])
 
+
+def nixfmt(input: str) -> str:
+    nixfmt = subprocess.Popen(["nixfmt"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    output, _ = nixfmt.communicate(input=input)
+    return output
+
+
 def ros2nix(args):
     parser = argparse.ArgumentParser(
         prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -621,8 +628,7 @@ def ros2nix(args):
             raise e
 
         if args.nixfmt:
-            nixfmt = subprocess.Popen(["nixfmt"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
-            derivation_text, _ = nixfmt.communicate(input=derivation_text)
+            derivation_text = nixfmt(derivation_text)
 
         try:
             output_file_name = get_output_file_name(source, pkg, args)
