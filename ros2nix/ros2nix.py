@@ -671,10 +671,13 @@ def ros2nix(args):
         generate_default(args)
         # TODO generate also release.nix (for testing/CI)?
 
-    if not args.no_cache:
-        os.makedirs(os.path.dirname(cache_file), exist_ok=True)
-        with open(cache_file, "w") as f:
-            json.dump(git_cache, f)
+    if not args.no_cache and len(git_cache) > 0:
+        try:
+            os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+            with open(cache_file, "w") as f:
+                json.dump(git_cache, f)
+        except Exception as exc:
+            warn(f"warning: Cannot store {cache_file}: {exc}")
 
     if args.compare and compare_failed:
         err("Some files are not up-to-date")
