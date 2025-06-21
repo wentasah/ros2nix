@@ -27,6 +27,6 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
       - run: "nix develop -c echo preparing environment"
-      - run: "set -o pipefail; nix develop -c bats test/{test,long_tests}.bats --trace --verbose-run --show-output-of-passing-tests"
+      - run: "set -o pipefail; nix develop -c bats test/{test,long_tests}.bats --timing --trace --verbose-run --show-output-of-passing-tests"
       - uses: pcolby/tap-summary@v1
         if: always()
