@@ -1,12 +1,12 @@
 # ros2nix
 
-Tool that simplifies using [ROS][] with the [Nix][] package manager
+Tool that simplifies using [ROS][] with the [Nix][] package manager,
 compatible with [nix-ros-overlay][]. It has two main use cases:
 
-- Convert ROS `package.xml` files to Nix expressions so that you can
-  build your ROS packages with Nix.
+- Converting ROS `package.xml` files to Nix expressions so that you
+  can build your ROS packages with Nix.
 
-- Create Nix-based development environment for compiling ROS
+- Creating Nix-based development environment for compiling ROS
   workspaces with e.g. `colcon`. The environment contains all
   dependencies declared in `package.xml` files in the workspace.
 
