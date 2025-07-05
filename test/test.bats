@@ -128,7 +128,7 @@ EOF
 @test "--compare with added package" {
     ros2nix ws/src/library/package.xml
     run -2 ros2nix --compare ws/src/{library,ros_node}/package.xml
-    assert_line --partial "Cannot read ws/src/ros_node/package.nix"
+    assert_line --partial "Some files are not up-to-date"
 }
 
 @test "--fetch from github over https" {
