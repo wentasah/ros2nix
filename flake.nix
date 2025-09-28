@@ -13,7 +13,18 @@
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ nix-ros-overlay.overlays.default ];
+          overlays = [
+            nix-ros-overlay.overlays.default
+            (final: prev: {
+              pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+                (python-final: python-prev: {
+                  catkin-pkg = builtins.break python-prev.catkin-pkg or
+                    # catkin-pkg was removed from nixpkgs - fall-back to our copy
+                    (python-final.callPackage ./nix/catkin-pkg {});
+                })
+              ];
+            })
+          ];
         };
         rosdistro = pkgs.stdenv.mkDerivation {
           pname = "rosdistro";
