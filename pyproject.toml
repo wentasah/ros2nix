@@ -9,9 +9,9 @@ readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache 2",
     "Operating System :: OS Independent",
 ]
+license = "Apache-2.0"
 
 [project.urls]
 Homepage = "https://github.com/wentasah/ros2nix"
