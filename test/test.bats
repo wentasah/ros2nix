@@ -134,6 +134,13 @@ EOF
     nix-build -A rosPackages.jazzy.ros-node
 }
 
+@test "--output-as-pkg-dir" {
+    ros2nix --output-as-ros-pkg-name $(find ws/src -name package.xml)
+    assert [ -f ros_node.nix ]
+    assert [ -f library.nix ]
+    nix-build -A rosPackages.jazzy.ros-node
+}
+
 @test "--flake" {
     ros2nix --flake --distro=jazzy $(find ws/src -name package.xml)
     nix flake check path:"${PWD}"

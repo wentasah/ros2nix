@@ -77,6 +77,8 @@ def get_output_file_name(source: str, pkg: Package, args):
         fn = f"{pkg.name}.nix"
     elif args.output_as_nix_pkg_name:
         fn = f"{NixPackage.normalize_name(pkg.name)}.nix"
+    elif args.output_as_pkg_dir:
+        fn = os.path.join(NixPackage.normalize_name(pkg.name), "package.nix")
     else:
         fn = args.output
     dir = args.output_dir if args.output_dir is not None else os.path.dirname(source)
@@ -311,6 +313,12 @@ def ros2nix(args):
         "--output-as-nix-pkg-name",
         action="store_true",
         help="Name output files based on Nix package name, e.g., package-name.nix. Implies --output-dir=.",
+    )
+    group.add_argument(
+        "--output-as-pkg-dir",
+        action="store_true",
+        help="Generate a package.nix inside a directory whose name matches your Nix package name."
+        "e.g, package-name/package.nix. Implies --output-dir=.",
     )
 
     parser.add_argument(
@@ -605,6 +613,9 @@ def ros2nix(args):
                     kwargs["src_expr"] = "./."
                 else:
                     kwargs["src_expr"] = f"./{os.path.dirname(os.path.relpath(source, args.output_dir)) or '.'}"
+
+                if args.output_as_pkg_dir:
+                    kwargs["src_expr"] = f"./{os.path.relpath(os.path.dirname(source), os.path.join(args.output_dir, NixPackage.normalize_name(pkg.name)))}"
 
             if args.source_root:
                 kwargs["source_root"] = args.source_root.replace('{package_name}', pkg.name)
