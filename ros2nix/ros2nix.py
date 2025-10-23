@@ -399,6 +399,12 @@ def ros2nix(args):
         help="Generate overlay.nix",
     )
     parser.add_argument(
+        "--packages",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enforce/suppress generation of package Nix expressions.",
+    )
+    parser.add_argument(
         "--shell",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -616,6 +622,11 @@ def ros2nix(args):
                 | derivation.propagated_native_build_inputs
                 | derivation.check_inputs
             )
+
+            if not args.packages:
+                # Skip writing package expressions. Note that above we
+                # still collect data needed for shell.nix.
+                continue
 
         except Exception as e:
             err(f'Failed to prepare Nix expression from {source}')
