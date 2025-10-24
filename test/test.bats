@@ -24,6 +24,22 @@ load common.bash
     nix-shell --run "colcon build"
 }
 
+@test "generate just shell.nix and build workspace by colcon in nix-shell" {
+    cd ws
+    ros2nix --distro=jazzy --output-as-nix-pkg-name \
+            --no-packages --no-overlay --no-default \
+            $(find src -name package.xml)
+    assert [ -f shell.nix ]
+
+    assert [ ! -f default.nix ]
+    assert [ ! -f overlay.nix ]
+    # Check that no packages were generated
+    assert [ ! -f library.nix ]
+    assert [ ! -f ros-node.nix ]
+
+    nix-shell --run "colcon build"
+}
+
 @test "nix-shell for local workspace with additional ROS package" {
     ros2nix --distro=jazzy $(find ws/src -name package.xml)
     nix-shell --arg withPackages 'p: with p; [ compressed-image-transport ]' \

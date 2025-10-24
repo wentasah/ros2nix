@@ -269,19 +269,19 @@ kernel of your host system.
 <!-- `$  python3 -m ros2nix --help` -->
 
 ```
-usage: ros2nix [-h]
-               [--output OUTPUT | --output-as-ros-pkg-name | --output-as-nix-pkg-name]
-               [--output-dir OUTPUT_DIR] [--fetch] [--use-per-package-src]
-               [--patches | --no-patches] [--distro DISTRO]
-               [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
-               [--no-cache] [--do-check] [--extra-build-inputs DEP1,DEP2,...]
+usage: ros2nix [-h] [--output OUTPUT | --output-as-ros-pkg-name |
+               --output-as-nix-pkg-name] [--output-dir OUTPUT_DIR] [--fetch]
+               [--use-per-package-src] [--patches | --no-patches]
+               [--distro DISTRO] [--src-param SRC_PARAM]
+               [--source-root SOURCE_ROOT] [--no-cache] [--do-check]
+               [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
                [--default | --no-default] [--overlay | --no-overlay]
-               [--shell | --no-shell] [--nix-ros-overlay FLAKEREF] [--nixfmt]
-               [--compare] [--copyright-holder COPYRIGHT_HOLDER]
-               [--license LICENSE]
+               [--packages | --no-packages] [--shell | --no-shell]
+               [--nix-ros-overlay FLAKEREF] [--nixfmt] [--compare]
+               [--copyright-holder COPYRIGHT_HOLDER] [--license LICENSE]
                package.xml [package.xml ...]
 
 positional arguments:
@@ -354,6 +354,9 @@ options:
                         None)
   --overlay, --no-overlay
                         Generate overlay.nix (default: True)
+  --packages, --no-packages
+                        Enforce/suppress generation of package Nix
+                        expressions. (default: True)
   --shell, --no-shell   Generate shell.nix (default: True)
   --nix-ros-overlay FLAKEREF
                         Flake reference of nix-ros-overlay. You may want to
