@@ -129,7 +129,7 @@ def generate_overlay(expressions: dict[str, str], args):
             expr = (
                 expressions[pkg]
                 if args.output_dir is None
-                else os.path.basename(expressions[pkg])
+                else os.path.relpath(expressions[pkg], args.output_dir)
             )
             print(f"  {pkg} = final.callPackage ./{expr} {{}};", file=f)
         print("}", file=f)
@@ -317,7 +317,7 @@ def ros2nix(args):
     group.add_argument(
         "--output-as-pkg-dir",
         action="store_true",
-        help="Generate a package.nix inside a directory whose name matches your Nix package name."
+        help="Generate a package.nix inside a directory whose name matches your Nix package name. "
         "e.g, package-name/package.nix. Implies --output-dir=.",
     )
 
@@ -450,7 +450,11 @@ def ros2nix(args):
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
-    if args.output_dir is None and (args.output_as_nix_pkg_name or args.output_as_ros_pkg_name):
+    if args.output_dir is None and (
+        args.output_as_nix_pkg_name
+        or args.output_as_ros_pkg_name
+        or args.output_as_pkg_dir
+    ):
         args.output_dir = "."
 
     if args.output_dir is not None and not (
