@@ -109,6 +109,10 @@ EOF
     nix-build -A rosPackages.jazzy.library
 }
 
+@test "--output-dir without --output-as-*" {
+    run ! ros2nix --output-dir=nix $(find ws/src -name package.xml)
+}
+
 @test "--output-as-nix-pkg-name" {
     ros2nix --output-as-nix-pkg-name $(find ws/src -name package.xml)
     assert [ -f ros-node.nix ]

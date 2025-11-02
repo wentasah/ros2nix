@@ -315,7 +315,7 @@ def ros2nix(args):
 
     parser.add_argument(
         "--output-dir",
-        help="Directory to generate output files in. "
+        help="Directory to generate output files in. Must be accompanied by one of --output-as-*. "
         "By default, package files are stored next to their corresponding package.xml, "
         "top-level files like overlay.nix in the current directory.",
     )
@@ -444,6 +444,14 @@ def ros2nix(args):
 
     if args.output_dir is None and (args.output_as_nix_pkg_name or args.output_as_ros_pkg_name):
         args.output_dir = "."
+
+    if args.output_dir is not None and not (
+        args.output_as_nix_pkg_name
+        or args.output_as_ros_pkg_name
+        or args.output_as_pkg_dir
+    ):
+        err("--output-dir must be used with one of --output-as-* switches.")
+        return 1
 
     if args.patches and not args.fetch:
         err("--patches cannot be used without --fetch")
