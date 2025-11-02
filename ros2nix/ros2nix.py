@@ -89,7 +89,11 @@ compare_failed = False
 @contextmanager
 def file_writer(path: str, compare: bool):
     # Code to acquire resource, e.g.:
-    f = open(path, "w") if not compare else io.StringIO()
+    if not compare:
+        os.makedirs(dirname(path) or '.', exist_ok=True)
+        f = open(path, "w")
+    else:
+        f = io.StringIO()
     try:
         yield f
     finally:
