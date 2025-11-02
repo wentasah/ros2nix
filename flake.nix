@@ -134,6 +134,7 @@
              mkdir $out; cd ${self};
              if ! ${pkgs.mdsh}/bin/mdsh --frozen; then
                echo 'Update README with `nix run .#mdsh`.'
+               exit 1
              fi'';
         };
       }
