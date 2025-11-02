@@ -299,7 +299,8 @@ options:
                         package-name.nix. Implies --output-dir=. (default:
                         False)
   --output-dir OUTPUT_DIR
-                        Directory to generate output files in. By default,
+                        Directory to generate output files in. Must be
+                        accompanied by one of --output-as-*. By default,
                         package files are stored next to their corresponding
                         package.xml, top-level files like overlay.nix in the
                         current directory. (default: None)
