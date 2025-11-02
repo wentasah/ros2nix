@@ -129,7 +129,7 @@
           inherit (pkgs) mdsh;
         };
         checks = {
-          mdsh-check-readme = pkgs.runCommandNoCC "mdsh"
+          mdsh-check-readme = pkgs.runCommand "mdsh"
             { nativeBuildInputs = [ ros2nix ]; } ''
              mkdir $out; cd ${self};
              if ! ${pkgs.mdsh}/bin/mdsh --frozen; then
