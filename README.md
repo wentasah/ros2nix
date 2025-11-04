@@ -270,11 +270,11 @@ kernel of your host system.
 
 ```
 usage: ros2nix [-h] [--output OUTPUT | --output-as-ros-pkg-name |
-               --output-as-nix-pkg-name] [--output-dir OUTPUT_DIR] [--fetch]
-               [--use-per-package-src] [--patches | --no-patches]
-               [--distro DISTRO] [--src-param SRC_PARAM]
-               [--source-root SOURCE_ROOT] [--no-cache] [--do-check]
-               [--extra-build-inputs DEP1,DEP2,...]
+               --output-as-nix-pkg-name | --output-as-pkg-dir]
+               [--output-dir OUTPUT_DIR] [--fetch] [--use-per-package-src]
+               [--patches | --no-patches] [--distro DISTRO]
+               [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
+               [--no-cache] [--do-check] [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
@@ -297,6 +297,10 @@ options:
   --output-as-nix-pkg-name
                         Name output files based on Nix package name, e.g.,
                         package-name.nix. Implies --output-dir=. (default:
+                        False)
+  --output-as-pkg-dir   Generate a package.nix inside a directory whose name
+                        matches your Nix package name. e.g, package-
+                        name/package.nix. Implies --output-dir=. (default:
                         False)
   --output-dir OUTPUT_DIR
                         Directory to generate output files in. Must be
