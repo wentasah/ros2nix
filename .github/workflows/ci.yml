@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: cachix/install-nix-action@v31
       - run: nix flake check
   tests:
     name: Test suite
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: cachix/install-nix-action@v31
         with:
           extra-conf: |
             extra-substituters = https://attic.iid.ciirc.cvut.cz/ros
