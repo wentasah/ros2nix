@@ -271,16 +271,20 @@ kernel of your host system.
 ```
 usage: ros2nix [-h] [--output OUTPUT | --output-as-ros-pkg-name |
                --output-as-nix-pkg-name | --output-as-pkg-dir]
-               [--output-dir OUTPUT_DIR] [--fetch] [--use-per-package-src]
+               [--output-dir OUTPUT_DIR] [--fetch] [--fetch-external]
+               [--use-flake-input-rev] [--use-per-package-src]
                [--patches | --no-patches] [--distro DISTRO]
-               [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
-               [--no-cache] [--do-check] [--extra-build-inputs DEP1,DEP2,...]
+               [--src-param SRC_PARAM] [--src-param-set SRC_PARAM_SET]
+               [--source-root SOURCE_ROOT] [--no-cache] [--do-check]
+               [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
-               [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
+               [--extra-native-build-inputs DEP1,DEP2,...]
+               [--exclude-deps DEP1,DEP2,...] [--flake]
                [--default | --no-default] [--overlay | --no-overlay]
                [--packages | --no-packages] [--shell | --no-shell]
                [--nix-ros-overlay FLAKEREF] [--nixfmt] [--compare]
+               [--omit-output-dir-from-cmdline]
                [--copyright-holder COPYRIGHT_HOLDER] [--license LICENSE]
                package.xml [package.xml ...]
 
@@ -313,6 +317,13 @@ options:
                         determined from the local git work tree. sourceRoot
                         attribute is set if needed and not overridden by
                         --source-root. (default: False)
+  --fetch-external      Determines the source code structure from git, but the
+                        code is passed as a set of inputs. Use together with
+                        --src-param-set. (default: False)
+  --use-flake-input-rev
+                        Hardcode the commit of the github repo in the flake
+                        input. Has only an effect if used together with
+                        --fetch-external and --flake (default: False)
   --use-per-package-src
                         When using --fetch, fetch only the package sub-
                         directory instead of the whole repo. For repos with
@@ -332,6 +343,10 @@ options:
   --src-param SRC_PARAM
                         Adds a parameter to the generated function and uses it
                         as a value of the src attribute (default: None)
+  --src-param-set SRC_PARAM_SET
+                        Similar to --src-param, but the sources are a set of
+                        sources, indexed by package name. Only has an effect
+                        when used with --fetch-external. (default: rosSources)
   --source-root SOURCE_ROOT
                         Set sourceRoot attribute value in the generated Nix
                         expression. Substring '{package_name}' gets replaced
@@ -350,6 +365,9 @@ options:
                         expressions (default: [])
   --extra-native-build-inputs DEP1,DEP2,...
                         Additional dependencies to add to the generated Nix
+                        expressions (default: [])
+  --exclude-deps DEP1,DEP2,...
+                        Dependencies to exclude from the generated Nix
                         expressions (default: [])
   --flake               Generate top-level flake.nix instead of default.nix.
                         Use with --fetch if some package.xml files are outside
@@ -374,6 +392,11 @@ options:
                         file would change existing files. Exit with exit code
                         2 if a change is detected. Useful for CI. (default:
                         False)
+  --omit-output-dir-from-cmdline
+                        Omit --output-dir argument from the command line that
+                        is included in generated files. This helps ensure
+                        reproducible output when different users run the tool
+                        with different output directories. (default: False)
   --copyright-holder COPYRIGHT_HOLDER
                         Copyright holder of the generated Nix expressions.
                         (default: None)
