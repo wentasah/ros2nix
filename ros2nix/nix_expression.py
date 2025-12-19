@@ -96,6 +96,7 @@ class NixExpression:
                  source_root: Optional[str] = None,
                  do_check: Optional[bool] = None,
                  patches: Optional[List[str]] = None,
+                 repo: Optional[str] = None,
                  ) -> None:
         self.name = name
         self.version = version
@@ -116,6 +117,7 @@ class NixExpression:
         self.native_build_inputs = native_build_inputs
         self.propagated_native_build_inputs = \
             propagated_native_build_inputs
+        self.repo = repo
 
     @staticmethod
     def _to_nix_list(it: Iterable[str]) -> str:
@@ -146,7 +148,10 @@ class NixExpression:
 
         if self.src_param:
             args.append(self.src_param)
-        src = indent(self.src_expr, "  ").strip()
+        if self.src_expr:
+            src = 'src = ' + indent(self.src_expr, "  ").strip()
+        else:
+            src = 'inherit src'
 
         args.extend(sorted(set(map(self._to_nix_parameter,
                                    self.build_inputs |
@@ -161,7 +166,7 @@ class NixExpression:
           pname = "ros-{distro_name}-{name}";
           version = "{version}";
 
-          src = {src};
+          {src};
 
           buildType = "{build_type}";
         ''').format(
