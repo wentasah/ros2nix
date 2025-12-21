@@ -295,6 +295,14 @@ def nixfmt(input: str) -> str:
     return output
 
 
+class ShellOnlyAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        namespace.shell = True
+        namespace.default = False
+        namespace.overlay = False
+        namespace.packages = False
+
+
 def ros2nix(args):
     parser = argparse.ArgumentParser(
         prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -421,6 +429,12 @@ def ros2nix(args):
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Generate shell.nix",
+    )
+    parser.add_argument(
+        "--shell-only",
+        nargs=0,
+        action=ShellOnlyAction,
+        help="Generate only shell.nix. This is a shortcut for --shell --no-default --no-overlay --no-packages.",
     )
     parser.add_argument(
         "--nix-ros-overlay",

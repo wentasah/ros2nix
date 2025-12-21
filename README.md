@@ -280,8 +280,9 @@ usage: ros2nix [-h] [--output OUTPUT | --output-as-ros-pkg-name |
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
                [--default | --no-default] [--overlay | --no-overlay]
                [--packages | --no-packages] [--shell | --no-shell]
-               [--nix-ros-overlay FLAKEREF] [--nixfmt] [--compare]
-               [--copyright-holder COPYRIGHT_HOLDER] [--license LICENSE]
+               [--shell-only] [--nix-ros-overlay FLAKEREF] [--nixfmt]
+               [--compare] [--copyright-holder COPYRIGHT_HOLDER]
+               [--license LICENSE]
                package.xml [package.xml ...]
 
 positional arguments:
@@ -363,6 +364,9 @@ options:
                         Enforce/suppress generation of package Nix
                         expressions. (default: True)
   --shell, --no-shell   Generate shell.nix (default: True)
+  --shell-only          Generate only shell.nix. This is a shortcut for
+                        --shell --no-default --no-overlay --no-packages.
+                        (default: None)
   --nix-ros-overlay FLAKEREF
                         Flake reference of nix-ros-overlay. You may want to
                         change the branch from master to develop or use your
