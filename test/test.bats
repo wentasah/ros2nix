@@ -40,6 +40,12 @@ load common.bash
     nix-shell --run "colcon build"
 }
 
+@test "generate just shell.nix with --shell-only" {
+    cd ws
+    ros2nix --distro=jazzy --shell-only $(find src -name package.xml)
+    assert [ $(find . -name '*.nix') = ./shell.nix ]
+}
+
 @test "nix-shell for local workspace with additional ROS package" {
     ros2nix --distro=jazzy $(find ws/src -name package.xml)
     nix-shell --arg withPackages 'p: with p; [ compressed-image-transport ]' \
