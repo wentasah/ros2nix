@@ -6,7 +6,7 @@ bats_require_minimum_version 1.5.0
 load common.bash
 
 @test "autoware" {
-    rm -rf ws # we don't use out simple workspace
+    rm -rf ws # we don't use our simple workspace
     git clone https://github.com/autowarefoundation/autoware.git
     cd autoware
     mkdir src
