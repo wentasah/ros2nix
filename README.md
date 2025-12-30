@@ -84,8 +84,8 @@ the [Autoware][] project as an example.
    ```sh
    git clone https://github.com/autowarefoundation/autoware.git
    cd autoware
-   mkdir src
-   vcs import src < autoware.repos
+   mkdir -p src
+   vcs import src < repositories/autoware.repos
    cd ..
 
    ros2nix --output-as-nix-pkg-name --fetch $(find -name package.xml|grep -v ament_cmake)
