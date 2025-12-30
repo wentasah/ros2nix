@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v31
         with:
-          extra-conf: |
+          extra_nix_config: |
             extra-substituters = https://attic.iid.ciirc.cvut.cz/ros
             extra-trusted-public-keys = ros:JR95vUYsShSqfA1VTYoFt1Nz6uXasm5QrcOsGry9f6Q=
       - run: |
