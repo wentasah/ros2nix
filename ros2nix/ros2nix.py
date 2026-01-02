@@ -2,7 +2,7 @@
 # PYTHON_ARGCOMPLETE_OK
 
 # Copyright 2019-2024 Ben Wolsieffer <benwolsieffer@gmail.com>
-# Copyright 2024, 2025 Michal Sojka <michal.sojka@cvut.cz>
+# Copyright 2024, 2025, 2026 Michal Sojka <michal.sojka@cvut.cz>
 
 from os.path import dirname
 import argcomplete, argparse
@@ -623,24 +623,24 @@ def ros2nix(args):
                     kwargs["src_param"] = "fetchFromGitHub"
                     kwargs["src_expr"] = strip_empty_lines(
                         dedent(f'''
-                      fetchFromGitHub {{
-                        owner = "{match["owner"]}";
-                        repo = "{match["repo"]}";
-                        rev = "{info["rev"]}";
-                        sha256 = "{info["sha256"]}";
-                        {sparse_checkout}
-                      }}''')
+                            fetchFromGitHub {{
+                              owner = "{match["owner"]}";
+                              repo = "{match["repo"]}";
+                              rev = "{info["rev"]}";
+                              sha256 = "{info["sha256"]}";
+                              {sparse_checkout}
+                            }}''')
                     ).strip()
                 else:
                     kwargs["src_param"] = "fetchgit"
                     kwargs["src_expr"] = strip_empty_lines(
                         dedent(f'''
-                      fetchgit {{
-                        url = "{url}";
-                        rev = "{info["rev"]}";
-                        sha256 = "{info["sha256"]}";
-                        {sparse_checkout}
-                      }}''')
+                            fetchgit {{
+                              url = "{url}";
+                              rev = "{info["rev"]}";
+                              sha256 = "{info["sha256"]}";
+                              {sparse_checkout}
+                            }}''')
                     ).strip()
 
                 if prefix:
@@ -651,9 +651,9 @@ def ros2nix(args):
                     patches = (
                         subprocess.check_output(
                             dedent(f"""
-                          for i in $(git rev-list --reverse --relative {upstream_rev}..HEAD -- .); do
-                            git format-patch --zero-commit --relative --no-signature -1 $i
-                          done"""),
+                                for i in $(git rev-list --reverse --relative {upstream_rev}..HEAD -- .); do
+                                  git format-patch --zero-commit --relative --no-signature -1 $i
+                                done"""),
                             shell=True,
                             cwd=srcdir,
                         )
