@@ -5,9 +5,10 @@
   inputs.nix-ros-overlay = { url = "github:lopsided98/nix-ros-overlay/develop"; inputs.nixpkgs.follows = "nixpkgs"; };
   inputs.rosdistro = { url = "github:ros/rosdistro"; flake = false; };
   inputs.flake-compat.url = "https://flakehub.com/f/edolstra/flake-compat/1.tar.gz";
+  inputs.treefmt-nix.url = "github:numtide/treefmt-nix";
 
   outputs =
-    { self, nixpkgs, flake-utils, nix-ros-overlay, ... } @ inputs:
+    { self, nixpkgs, flake-utils, nix-ros-overlay, treefmt-nix, ... } @ inputs:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
@@ -26,6 +27,7 @@
             })
           ];
         };
+        treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
         rosdistro = pkgs.stdenv.mkDerivation {
           pname = "rosdistro";
           version = inputs.rosdistro.lastModifiedDate;
@@ -128,6 +130,7 @@
           inherit rosdistro rosdep-cache rosdep ros2nix;
           inherit (pkgs) mdsh;
         };
+        formatter = treefmtEval.config.build.wrapper;
         checks = {
           mdsh-check-readme = pkgs.runCommand "mdsh"
             { nativeBuildInputs = [ ros2nix ]; } ''
@@ -136,6 +139,7 @@
                echo 'Update README with `nix run .#mdsh`.'
                exit 1
              fi'';
+          formatting = treefmtEval.config.build.check self;
         };
       }
     );
