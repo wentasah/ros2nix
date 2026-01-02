@@ -156,7 +156,9 @@ def flakeref_to_expr(flakeref) -> str:
         case '.' | '/':
             expr = flakeref
         case _:
-            match re.match("(?P<type>.*?):(?P<owner>.*?)/(?P<repo>.*?)(?:/(?P<ref>.*))?$", flakeref):
+            match re.match(
+                "(?P<type>.*?):(?P<owner>.*?)/(?P<repo>.*?)(?:/(?P<ref>.*))?$", flakeref
+            ):
                 case None:
                     raise Exception(f'Unsupported flakeref: "{flakeref}"')
                 case parts:
@@ -243,16 +245,21 @@ pkgs.mkShell {{
 
 def generate_flake(args):
     with file_writer(f'{args.output_dir or "."}/flake.nix', args.compare) as f:
-        f.write('''
+        f.write(
+            '''
 {
   inputs = {
-    nix-ros-overlay.url = "''' + args.nix_ros_overlay + '''";
+    nix-ros-overlay.url = "'''
+            + args.nix_ros_overlay
+            + '''";
     nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!
   };
   outputs = { self, nix-ros-overlay, nixpkgs }:
     nix-ros-overlay.inputs.flake-utils.lib.eachDefaultSystem (system:
       let
-''' + indent(ros_distro_overlays_def, "        ") + '''
+'''
+            + indent(ros_distro_overlays_def, "        ")
+            + '''
         pkgs = import nixpkgs {
           inherit system;
           overlays = [
@@ -260,9 +267,11 @@ def generate_flake(args):
             rosDistroOverlays
           ];
         };
-''' + f'''
+'''
+            + f'''
         rosDistro = "{args.distro}";
-''' + '''
+'''
+            + '''
       in {
         legacyPackages = pkgs.rosPackages;
         packages = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.${rosDistro};
@@ -278,7 +287,8 @@ def generate_flake(args):
     extra-trusted-public-keys = [ "ros.cachix.org-1:dSyZxI8geDCJrwgvCOHDoAfOm5sV1wCPjBkKL+38Rvo=" ];
   };
 }
-''')
+'''
+        )
 
 
 def comma_separated(arg: str) -> list[str]:
@@ -307,8 +317,9 @@ def ros2nix(args):
     parser = argparse.ArgumentParser(
         prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("source", nargs="+", metavar="package.xml", help="Path to package.xml").completer = \
-        argcomplete.completers.FilesCompleter(("xml"))
+    parser.add_argument(
+        "source", nargs="+", metavar="package.xml", help="Path to package.xml"
+    ).completer = argcomplete.completers.FilesCompleter(("xml"))
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--output", default="package.nix", help="Output filename")
@@ -348,7 +359,7 @@ def ros2nix(args):
         "--use-per-package-src",
         action="store_true",
         help="When using --fetch, fetch only the package sub-directory instead of the whole repo. "
-        "For repos with multiple packages, this will avoid rebuilds of unchanged packages at the cost of longer generation time."
+        "For repos with multiple packages, this will avoid rebuilds of unchanged packages at the cost of longer generation time.",
     )
     parser.add_argument(
         "--patches",
@@ -385,19 +396,31 @@ def ros2nix(args):
     )
 
     parser.add_argument(
-        "--extra-build-inputs", type=comma_separated, metavar="DEP1,DEP2,...", default=[],
+        "--extra-build-inputs",
+        type=comma_separated,
+        metavar="DEP1,DEP2,...",
+        default=[],
         help="Additional dependencies to add to the generated Nix expressions",
     )
     parser.add_argument(
-        "--extra-propagated-build-inputs", type=comma_separated, metavar="DEP1,DEP2,...", default=[],
+        "--extra-propagated-build-inputs",
+        type=comma_separated,
+        metavar="DEP1,DEP2,...",
+        default=[],
         help="Additional dependencies to add to the generated Nix expressions",
     )
     parser.add_argument(
-        "--extra-check-inputs", type=comma_separated, metavar="DEP1,DEP2,...", default=[],
+        "--extra-check-inputs",
+        type=comma_separated,
+        metavar="DEP1,DEP2,...",
+        default=[],
         help="Additional dependencies to add to the generated Nix expressions",
     )
     parser.add_argument(
-        "--extra-native-build-inputs", type=comma_separated, metavar="DEP1,DEP2,...", default=[],
+        "--extra-native-build-inputs",
+        type=comma_separated,
+        metavar="DEP1,DEP2,...",
+        default=[],
         help="Additional dependencies to add to the generated Nix expressions",
     )
 
@@ -457,24 +480,18 @@ def ros2nix(args):
     parser.add_argument(
         "--copyright-holder", help="Copyright holder of the generated Nix expressions."
     )
-    parser.add_argument(
-        "--license", help="License of the generated Nix expressions, e.g. 'BSD'"
-    )
+    parser.add_argument("--license", help="License of the generated Nix expressions, e.g. 'BSD'")
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     if args.output_dir is None and (
-        args.output_as_nix_pkg_name
-        or args.output_as_ros_pkg_name
-        or args.output_as_pkg_dir
+        args.output_as_nix_pkg_name or args.output_as_ros_pkg_name or args.output_as_pkg_dir
     ):
         args.output_dir = "."
 
     if args.output_dir is not None and not (
-        args.output_as_nix_pkg_name
-        or args.output_as_ros_pkg_name
-        or args.output_as_pkg_dir
+        args.output_as_nix_pkg_name or args.output_as_ros_pkg_name or args.output_as_pkg_dir
     ):
         err("--output-dir must be used with one of --output-as-* switches.")
         return 1
@@ -488,8 +505,7 @@ def ros2nix(args):
         + [
             arg
             for arg in sys.argv[1:]
-            if not (arg.endswith("package.xml") and os.path.isfile(arg))
-            and arg != "--compare"
+            if not (arg.endswith("package.xml") and os.path.isfile(arg)) and arg != "--compare"
         ]
     )
 
@@ -523,17 +539,16 @@ def ros2nix(args):
             # ament_cmake_*) need to be added to CMAKE_PREFIX_PATH and therefore
             # need to be in buildInputs. There is no easy way to distinguish these
             # two cases, so they are added to both, which generally works fine.
-            build_inputs = set(resolve_dependencies(
-                build_deps | buildtool_deps))
+            build_inputs = set(resolve_dependencies(build_deps | buildtool_deps))
             propagated_build_inputs = resolve_dependencies(
-                exec_deps | build_export_deps | buildtool_export_deps)
+                exec_deps | build_export_deps | buildtool_export_deps
+            )
             build_inputs -= propagated_build_inputs
 
             check_inputs = resolve_dependencies(test_deps)
             check_inputs -= build_inputs
 
-            native_build_inputs = resolve_dependencies(
-                buildtool_deps | buildtool_export_deps)
+            native_build_inputs = resolve_dependencies(buildtool_deps | buildtool_export_deps)
 
             kwargs = {}
             patches = []
@@ -553,13 +568,20 @@ def ros2nix(args):
                 head = check_output("git rev-parse HEAD".split())
 
                 def merge_base_to_upstream(commit: str) -> str:
-                    return subprocess.check_output(f"git merge-base {commit} $(git for-each-ref refs/remotes/origin --format='%(objectname)')",
-                                                   cwd=srcdir, shell=True).decode().strip()
+                    return (
+                        subprocess.check_output(
+                            f"git merge-base {commit} $(git for-each-ref refs/remotes/origin --format='%(objectname)')",
+                            cwd=srcdir,
+                            shell=True,
+                        )
+                        .decode()
+                        .strip()
+                    )
 
                 if args.use_per_package_src:
                     # Set head to point to the last commit the subdirectory was changed. This is
                     # not strictly necessary, but it will increase hit rate of git_cache.
-                    merge_base = merge_base_to_upstream(head) # filter out locally applied patches
+                    merge_base = merge_base_to_upstream(head)  # filter out locally applied patches
                     head = check_output(f"git rev-list {merge_base} -1 -- .".split())
 
                 def cache_key(url, prefix):
@@ -585,55 +607,77 @@ def ros2nix(args):
                             + [toplevel, upstream_rev],
                         ).decode()
                     )
-                    git_cache[cache_key(url, prefix)] = {k : info[k] for k in ["rev", "sha256"]}
+                    git_cache[cache_key(url, prefix)] = {k: info[k] for k in ["rev", "sha256"]}
 
-                match = re.match("https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url)
-                sparse_checkout = f"""sparseCheckout = ["{prefix}"];
-                        nonConeMode = true;""" if prefix and args.use_per_package_src else ""
+                match = re.match(
+                    "https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url
+                )
+                sparse_checkout = (
+                    f"""sparseCheckout = ["{prefix}"];
+                        nonConeMode = true;"""
+                    if prefix and args.use_per_package_src
+                    else ""
+                )
 
                 if match is not None:
                     kwargs["src_param"] = "fetchFromGitHub"
-                    kwargs["src_expr"] = strip_empty_lines(dedent(f'''
+                    kwargs["src_expr"] = strip_empty_lines(
+                        dedent(f'''
                       fetchFromGitHub {{
                         owner = "{match["owner"]}";
                         repo = "{match["repo"]}";
                         rev = "{info["rev"]}";
                         sha256 = "{info["sha256"]}";
                         {sparse_checkout}
-                      }}''')).strip()
+                      }}''')
+                    ).strip()
                 else:
                     kwargs["src_param"] = "fetchgit"
-                    kwargs["src_expr"] = strip_empty_lines(dedent(f'''
+                    kwargs["src_expr"] = strip_empty_lines(
+                        dedent(f'''
                       fetchgit {{
                         url = "{url}";
                         rev = "{info["rev"]}";
                         sha256 = "{info["sha256"]}";
                         {sparse_checkout}
-                      }}''')).strip()
+                      }}''')
+                    ).strip()
 
                 if prefix:
                     # kwargs["src_expr"] = f'''let fullSrc = {kwargs["src_expr"]}; in "${{fullSrc}}/{prefix}"'''
                     kwargs["source_root"] = f"${{src.name}}/{prefix}"
 
                 if args.patches:
-                    patches = subprocess.check_output(
-                        dedent(f"""
+                    patches = (
+                        subprocess.check_output(
+                            dedent(f"""
                           for i in $(git rev-list --reverse --relative {upstream_rev}..HEAD -- .); do
                             git format-patch --zero-commit --relative --no-signature -1 $i
                           done"""),
-                        shell=True, cwd=srcdir,
-                    ).decode().strip().splitlines()
+                            shell=True,
+                            cwd=srcdir,
+                        )
+                        .decode()
+                        .strip()
+                        .splitlines()
+                    )
                 elif head != upstream_rev:
-                    warn(f"{toplevel} contains commits not available upstream. Consider using --patches")
+                    warn(
+                        f"{toplevel} contains commits not available upstream. Consider using --patches"
+                    )
 
             else:
                 if args.output_dir is None:
                     kwargs["src_expr"] = "./."
                 else:
-                    kwargs["src_expr"] = f"./{os.path.dirname(os.path.relpath(source, args.output_dir)) or '.'}"
+                    kwargs["src_expr"] = (
+                        f"./{os.path.dirname(os.path.relpath(source, args.output_dir)) or '.'}"
+                    )
 
                 if args.output_as_pkg_dir:
-                    kwargs["src_expr"] = f"./{os.path.relpath(os.path.dirname(source), os.path.join(args.output_dir, NixPackage.normalize_name(pkg.name)))}"
+                    kwargs["src_expr"] = (
+                        f"./{os.path.relpath(os.path.dirname(source), os.path.join(args.output_dir, NixPackage.normalize_name(pkg.name)))}"
+                    )
 
             if args.source_root:
                 kwargs["source_root"] = args.source_root.replace('{package_name}', pkg.name)
@@ -649,7 +693,8 @@ def ros2nix(args):
                 distro_name=args.distro,
                 build_type=pkg.get_build_type(),
                 build_inputs=build_inputs | set(args.extra_build_inputs),
-                propagated_build_inputs=propagated_build_inputs | set(args.extra_propagated_build_inputs),
+                propagated_build_inputs=propagated_build_inputs
+                | set(args.extra_propagated_build_inputs),
                 check_inputs=check_inputs | set(args.extra_check_inputs),
                 native_build_inputs=native_build_inputs | set(args.extra_native_build_inputs),
                 patches=[f"./{p}" for p in patches],
@@ -701,11 +746,14 @@ def ros2nix(args):
                     msg = f"Patch {patch_filename} already exists"
                     err(msg)
                     raise Exception(msg)
-                with file_writer(patch_filename, args.compare) as patch_dest, \
-                     open(os.path.join(os.path.dirname(source), patch), "r") as patch_src:
+                with file_writer(patch_filename, args.compare) as patch_dest, open(
+                    os.path.join(os.path.dirname(source), patch), "r"
+                ) as patch_src:
                     patch_dest.write(patch_src.read())
             if not args.compare:
-                ok(f"Successfully generated derivation for package '{pkg.name}' as '{output_file_name}'.")
+                ok(
+                    f"Successfully generated derivation for package '{pkg.name}' as '{output_file_name}'."
+                )
 
             expressions[NixPackage.normalize_name(pkg.name)] = output_file_name
         except Exception as e:
@@ -739,6 +787,7 @@ def ros2nix(args):
 
 def main():
     import sys
+
     return ros2nix(sys.argv[1:])
 
 

@@ -31,9 +31,7 @@ from superflore.utils import get_license
 
 
 def _escape_nix_string(string: str):
-    return '"{}"'.format(string.replace("\\", "\\\\")
-                               .replace("${", r"\${")
-                               .replace('"', r"\""))
+    return '"{}"'.format(string.replace("\\", "\\\\").replace("${", r"\${").replace('"', r"\""))
 
 
 class NixLicense:
@@ -82,21 +80,25 @@ class NixLicense:
 
 
 class NixExpression:
-    def __init__(self, name: str, version: str,
-                 description: str, licenses: Iterable[NixLicense],
-                 distro_name: str,
-                 build_type: str,
-                 src_expr: str,
-                 build_inputs: Set[str] = set(),
-                 propagated_build_inputs: Set[str] = set(),
-                 check_inputs: Set[str] = set(),
-                 native_build_inputs: Set[str] = set(),
-                 propagated_native_build_inputs: Set[str] = set(),
-                 src_param: Optional[str] = None,
-                 source_root: Optional[str] = None,
-                 do_check: Optional[bool] = None,
-                 patches: Optional[List[str]] = None,
-                 ) -> None:
+    def __init__(
+        self,
+        name: str,
+        version: str,
+        description: str,
+        licenses: Iterable[NixLicense],
+        distro_name: str,
+        build_type: str,
+        src_expr: str,
+        build_inputs: Set[str] = set(),
+        propagated_build_inputs: Set[str] = set(),
+        check_inputs: Set[str] = set(),
+        native_build_inputs: Set[str] = set(),
+        propagated_native_build_inputs: Set[str] = set(),
+        src_param: Optional[str] = None,
+        source_root: Optional[str] = None,
+        do_check: Optional[bool] = None,
+        patches: Optional[List[str]] = None,
+    ) -> None:
         self.name = name
         self.version = version
         self.src_param = src_param
@@ -114,8 +116,7 @@ class NixExpression:
         self.propagated_build_inputs = propagated_build_inputs
         self.check_inputs = check_inputs
         self.native_build_inputs = native_build_inputs
-        self.propagated_native_build_inputs = \
-            propagated_native_build_inputs
+        self.propagated_native_build_inputs = propagated_native_build_inputs
 
     @staticmethod
     def _to_nix_list(it: Iterable[str]) -> str:
@@ -138,22 +139,28 @@ class NixExpression:
             # Copyright {} {}
             # Distributed under the terms of the {} license
 
-            ''').format(
-                strftime("%Y", gmtime()), distributor,
-                license_name)
+            ''').format(strftime("%Y", gmtime()), distributor, license_name)
 
-        args = [ "lib", "buildRosPackage" ]
+        args = ["lib", "buildRosPackage"]
 
         if self.src_param:
             args.append(self.src_param)
         src = indent(self.src_expr, "  ").strip()
 
-        args.extend(sorted(set(map(self._to_nix_parameter,
-                                   self.build_inputs |
-                                   self.propagated_build_inputs |
-                                   self.check_inputs |
-                                   self.native_build_inputs |
-                                   self.propagated_native_build_inputs))))
+        args.extend(
+            sorted(
+                set(
+                    map(
+                        self._to_nix_parameter,
+                        self.build_inputs
+                        | self.propagated_build_inputs
+                        | self.check_inputs
+                        | self.native_build_inputs
+                        | self.propagated_native_build_inputs,
+                    )
+                )
+            )
+        )
         ret += '{ ' + ', '.join(args) + ' }:'
 
         ret += dedent('''
@@ -169,7 +176,8 @@ class NixExpression:
             name=self.name,
             version=self.version,
             src=src,
-            build_type=self.build_type)
+            build_type=self.build_type,
+        )
         if self.patches:
             ret += f"""  patches = [\n    {"\n    ".join(self.patches)}\n  ];\n"""
 
@@ -180,25 +188,25 @@ class NixExpression:
             ret += f'  doCheck = {"true" if self.do_check else "false"};\n'
 
         if self.build_inputs:
-            ret += "  buildInputs = {};\n" \
-                .format(self._to_nix_list(sorted(self.build_inputs)))
+            ret += "  buildInputs = {};\n".format(self._to_nix_list(sorted(self.build_inputs)))
 
         if self.check_inputs:
-            ret += "  checkInputs = {};\n" \
-                .format(self._to_nix_list(sorted(self.check_inputs)))
+            ret += "  checkInputs = {};\n".format(self._to_nix_list(sorted(self.check_inputs)))
 
         if self.propagated_build_inputs:
-            ret += "  propagatedBuildInputs = {};\n" \
-                .format(self._to_nix_list(sorted(
-                    self.propagated_build_inputs)))
+            ret += "  propagatedBuildInputs = {};\n".format(
+                self._to_nix_list(sorted(self.propagated_build_inputs))
+            )
 
         if self.native_build_inputs:
-            ret += "  nativeBuildInputs = {};\n" \
-                .format(self._to_nix_list(sorted(self.native_build_inputs)))
+            ret += "  nativeBuildInputs = {};\n".format(
+                self._to_nix_list(sorted(self.native_build_inputs))
+            )
 
         if self.propagated_native_build_inputs:
             ret += "  propagatedNativeBuildInputs = {};\n".format(
-                self._to_nix_list(sorted(self.propagated_native_build_inputs)))
+                self._to_nix_list(sorted(self.propagated_native_build_inputs))
+            )
 
         ret += dedent('''
           meta = {{
@@ -206,8 +214,9 @@ class NixExpression:
             license = with lib.licenses; {};
           }};
         }}
-        ''').format(_escape_nix_string(self.description),
-                    self._to_nix_list(map(attrgetter('nix_code'),
-                                          self.licenses)))
+        ''').format(
+            _escape_nix_string(self.description),
+            self._to_nix_list(map(attrgetter('nix_code'), self.licenses)),
+        )
 
         return ''.join(ret)
