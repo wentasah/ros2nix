@@ -18,6 +18,9 @@ jobs:
   tests:
     name: Test suite
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test: [fast, test, autoware]
     steps:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v31
@@ -33,12 +36,12 @@ jobs:
         run: |
           mkdir out
           set -o pipefail
-          nix develop -c bats test/{test,long_tests}.bats --timing --gather-test-outputs-in $PWD/out | tee tests.tap
+          nix develop -c bats test/${{ matrix.test }}.bats --timing --gather-test-outputs-in $PWD/out | tee tests.tap
       - uses: pcolby/tap-summary@v1
         if: always()
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: logs
+          name: logs-${{ matrix.test }}
           path: |
             out
