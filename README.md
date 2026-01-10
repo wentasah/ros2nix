@@ -385,6 +385,17 @@ options:
                         (default: None)
 ```
 
+## Contributing
+
+We welcome issue reports and pull requests. Before submitting a pull
+request:
+
+- Format the code by running `nix fmt`.
+- Run the test suite: `nix develop -c bats  test/{fast,test,autoware}.bats`.
+
+  If something fails and you don't know why, feel free to discuss that
+  in the PR.
+
 **Acknowledgment:**
 
 This project was co-financed from the state budget by the Technology
