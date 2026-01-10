@@ -46,6 +46,13 @@ load common.bash
     assert [ $(find . -name '*.nix') = ./shell.nix ]
 }
 
+@test "--shell-only with --output-dir" {
+    cd ws
+    mkdir -p out
+    ros2nix --distro=jazzy --shell-only $(find src -name package.xml) --output-dir=out
+    assert [ -f out/shell.nix ]
+}
+
 @test "nix-shell for local workspace with additional ROS package" {
     ros2nix --distro=jazzy $(find ws/src -name package.xml)
     nix-shell --arg withPackages 'p: with p; [ compressed-image-transport ]' \
