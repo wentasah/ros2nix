@@ -58,11 +58,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1762125349,
-        "narHash": "sha256-V72w01oZmuE6MHWbQsvYpaHVFucj8dyC4NO1VjZ9z9Q=",
+        "lastModified": 1767432239,
+        "narHash": "sha256-bvU1HqE8NCv8KbkYvbmDNsXdiXNh4bS4fRqkXLZB8D0=",
         "owner": "lopsided98",
         "repo": "nix-ros-overlay",
-        "rev": "cc9987098714b598ecfaa3ca1516d876105dbd04",
+        "rev": "3def70a769fba19e7370f4ad0d78669e4f259f19",
         "type": "github"
       },
       "original": {
