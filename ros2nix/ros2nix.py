@@ -490,8 +490,12 @@ def ros2nix(args):
     ):
         args.output_dir = "."
 
-    if args.output_dir is not None and not (
-        args.output_as_nix_pkg_name or args.output_as_ros_pkg_name or args.output_as_pkg_dir
+    if (
+        args.output_dir is not None
+        and args.packages
+        and not (
+            args.output_as_nix_pkg_name or args.output_as_ros_pkg_name or args.output_as_pkg_dir
+        )
     ):
         err("--output-dir must be used with one of --output-as-* switches.")
         return 1
