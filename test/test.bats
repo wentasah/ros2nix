@@ -5,6 +5,14 @@
 bats_require_minimum_version 1.5.0
 load common.bash
 
+RUN_BUILD=true
+
+if [[ ${BATS_TEST_FILENAME##*/} = fast.bats ]]; then
+    RUN_BUILD=false
+    nix-build() { echo >&2 "warning: Skipping nix-build"; }
+    nix-shell() { echo >&2 "warning: Skipping nix-shell"; }
+fi
+
 @test "ros2nix --help" {
     ros2nix --help
 }
@@ -113,7 +121,7 @@ EOF
 @test "nixify local workspace and build it by colcon in nix develop" {
     cd ws
     ros2nix --flake --distro=jazzy $(find src -name package.xml)
-    nix develop --command colcon build
+    if $RUN_BUILD; then nix develop --command colcon build; fi
 }
 
 @test "nixify package in the current directory" {
@@ -156,8 +164,10 @@ EOF
 
 @test "--flake" {
     ros2nix --flake --distro=jazzy $(find ws/src -name package.xml)
-    nix flake check path:"${PWD}"
-    nix build path:"${PWD}#ros-node"
+    if $RUN_BUILD; then
+        nix flake check path:"${PWD}"
+        nix build path:"${PWD}#ros-node"
+    fi
 }
 
 @test "--compare" {
@@ -181,10 +191,12 @@ EOF
 @test "--fetch from github over https" {
     git clone https://github.com/wentasah/ros2nix
     ros2nix --output-as-nix-pkg-name --fetch $(find "ros2nix/test/ws/src" -name package.xml)
-    nix-build -A rosPackages.jazzy.ros-node
-    run ./result/lib/ros_node/node
-    assert_success
-    assert_line --partial "hello world"
+    if $RUN_BUILD; then
+        nix-build -A rosPackages.jazzy.ros-node
+        run ./result/lib/ros_node/node
+        assert_success
+        assert_line --partial "hello world"
+    fi
 }
 
 @test "--patches without --fetch" {
@@ -200,11 +212,13 @@ EOF
     ros2nix --output-as-nix-pkg-name --fetch --patches $(find "ros2nix/test/ws/src" -name package.xml)
     # remove original (abd patched) sources
     rm -rf ros2nix
-    nix-build -A rosPackages.jazzy.ros-node
-    # validate that we get patched binary
-    run ./result/lib/ros_node/node
-    assert_success
-    assert_line --partial "hello patch"
+    if $RUN_BUILD; then
+        nix-build -A rosPackages.jazzy.ros-node
+        # validate that we get patched binary
+        run ./result/lib/ros_node/node
+        assert_success
+        assert_line --partial "hello patch"
+    fi
 }
 
 @test "--fetch --patches with colliding changes" {
@@ -239,8 +253,10 @@ EOF
 @test "--use-per-package-src" {
     git clone https://github.com/wentasah/ros2nix
     ros2nix --output-as-nix-pkg-name --fetch --use-per-package-src $(find "ros2nix/test/ws/src" -name package.xml)
-    nix-build -A rosPackages.jazzy.ros-node
-    run ./result/lib/ros_node/node
-    assert_success
-    assert_line --partial "hello world"
+    if $RUN_BUILD; then
+        nix-build -A rosPackages.jazzy.ros-node
+        run ./result/lib/ros_node/node
+        assert_success
+        assert_line --partial "hello world"
+    fi
 }
