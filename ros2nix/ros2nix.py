@@ -60,7 +60,7 @@ def resolve_dependency(d: str) -> Iterable[str]:
 
 
 # Adapted from rosdistro.dependency_walker.DependencyWalker._get_dependencies()
-def get_dependencies_as_set(pkg, dep_type) -> Set[str]:
+def get_dependencies_as_set(pkg, dep_type, exclude_deps) -> Set[str]:
     deps = {
         "build": pkg.build_depends,
         "buildtool": pkg.buildtool_depends,
@@ -71,7 +71,13 @@ def get_dependencies_as_set(pkg, dep_type) -> Set[str]:
         "test": pkg.test_depends,
         "doc": pkg.doc_depends,
     }
-    return set([d.name for d in deps[dep_type] if d.evaluated_condition is not False])
+    return set(
+        [
+            d.name
+            for d in deps[dep_type]
+            if d.evaluated_condition is not False and d.name not in exclude_deps
+        ]
+    )
 
 
 def get_output_file_name(source: str, pkg: Package, args):
@@ -484,6 +490,13 @@ def ros2nix(args):
         default=[],
         help="Additional dependencies to add to the generated Nix expressions",
     )
+    parser.add_argument(
+        "--exclude-deps",
+        type=comma_separated,
+        metavar="DEP1,DEP2,...",
+        default=[],
+        help="Dependencies to exclude from the generated Nix expressions",
+    )
 
     parser.add_argument(
         "--flake",
@@ -592,12 +605,14 @@ def ros2nix(args):
             pkg = parse_package_string(package_xml)
             pkg.evaluate_conditions(NixPackage._get_condition_context(args.distro))
 
-            buildtool_deps = get_dependencies_as_set(pkg, "buildtool")
-            buildtool_export_deps = get_dependencies_as_set(pkg, "buildtool_export")
-            build_deps = get_dependencies_as_set(pkg, "build")
-            build_export_deps = get_dependencies_as_set(pkg, "build_export")
-            exec_deps = get_dependencies_as_set(pkg, "exec")
-            test_deps = get_dependencies_as_set(pkg, "test")
+            buildtool_deps = get_dependencies_as_set(pkg, "buildtool", args.exclude_deps)
+            buildtool_export_deps = get_dependencies_as_set(
+                pkg, "buildtool_export", args.exclude_deps
+            )
+            build_deps = get_dependencies_as_set(pkg, "build", args.exclude_deps)
+            build_export_deps = get_dependencies_as_set(pkg, "build_export", args.exclude_deps)
+            exec_deps = get_dependencies_as_set(pkg, "exec", args.exclude_deps)
+            test_deps = get_dependencies_as_set(pkg, "test", args.exclude_deps)
 
             # buildtool_depends are added to buildInputs and nativeBuildInputs.
             # Some (such as CMake) have binaries that need to run at build time

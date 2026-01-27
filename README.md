@@ -278,7 +278,8 @@ usage: ros2nix [-h] [--output OUTPUT | --output-as-ros-pkg-name |
                [--no-cache] [--do-check] [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
-               [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
+               [--extra-native-build-inputs DEP1,DEP2,...]
+               [--exclude-deps DEP1,DEP2,...] [--flake]
                [--default | --no-default] [--overlay | --no-overlay]
                [--packages | --no-packages] [--shell | --no-shell]
                [--shell-only] [--nix-ros-overlay FLAKEREF] [--nixfmt]
@@ -362,6 +363,9 @@ options:
                         expressions (default: [])
   --extra-native-build-inputs DEP1,DEP2,...
                         Additional dependencies to add to the generated Nix
+                        expressions (default: [])
+  --exclude-deps DEP1,DEP2,...
+                        Dependencies to exclude from the generated Nix
                         expressions (default: [])
   --flake               Generate top-level flake.nix instead of default.nix.
                         Use with --fetch or --fetch-in-flake-inputs if some

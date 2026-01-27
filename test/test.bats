@@ -261,6 +261,20 @@ EOF
     fi
 }
 
+@test "--exclude-deps" {
+    ros2nix --output-as-nix-pkg-name --exclude-deps=ament-cmake $(find ws/src -name package.xml)
+    tail -n +2 library.nix > library.nix
+    assert_file_not_contains  ./library.nix zlib
+}
+
+@test "--exclude-deps with multiple dependencies" {
+    ros2nix --exclude-deps=zlib,library $(find ws/src -name package.xml)
+    tail -n +2 library.nix > library.nix
+    tail -n +2 ros-node.nix > ros-node.nix
+    assert_file_not_contains  ./library.nix zlib
+    assert_file_not_contains  ./ros-node.nix library
+}
+
 @test "--fetch-in-flake-inputs without --flake" {
     git clone https://github.com/wentasah/ros2nix
     # With --fetch-in-flake-inputs but without --flake or --no-default,
