@@ -246,29 +246,23 @@ pkgs.mkShell {{
 def generate_flake(args):
     with file_writer(f'{args.output_dir or "."}/flake.nix', args.compare) as f:
         f.write(
-            '''
-{
-  inputs = {
-    nix-ros-overlay.url = "'''
-            + args.nix_ros_overlay
-            + '''";
+            f'''
+{{
+  inputs = {{
+    nix-ros-overlay.url = "{args.nix_ros_overlay}";
     nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!
-  };
-  outputs = { self, nix-ros-overlay, nixpkgs }:
+  }};
+  outputs = {{ self, nix-ros-overlay, nixpkgs }}:
     nix-ros-overlay.inputs.flake-utils.lib.eachDefaultSystem (system:
       let
-'''
-            + indent(ros_distro_overlays_def, "        ")
-            + '''
-        pkgs = import nixpkgs {
+{indent(ros_distro_overlays_def, "        ")}
+        pkgs = import nixpkgs {{
           inherit system;
           overlays = [
             nix-ros-overlay.overlays.default
             rosDistroOverlays
           ];
-        };
-'''
-            + f'''
+        }};
         rosDistro = "{args.distro}";
 '''
             + '''
