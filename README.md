@@ -271,10 +271,11 @@ kernel of your host system.
 ```
 usage: ros2nix [-h] [--output OUTPUT | --output-as-ros-pkg-name |
                --output-as-nix-pkg-name | --output-as-pkg-dir]
-               [--output-dir OUTPUT_DIR] [--fetch] [--use-per-package-src]
-               [--patches | --no-patches] [--distro DISTRO]
-               [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
-               [--no-cache] [--do-check] [--extra-build-inputs DEP1,DEP2,...]
+               [--output-dir OUTPUT_DIR] [--fetch [{nixpkgs,flake-inputs}]]
+               [--use-per-package-src] [--patches | --no-patches]
+               [--distro DISTRO] [--src-param SRC_PARAM]
+               [--source-root SOURCE_ROOT] [--no-cache] [--do-check]
+               [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
                [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
@@ -309,11 +310,19 @@ options:
                         package files are stored next to their corresponding
                         package.xml, top-level files like overlay.nix in the
                         current directory. (default: None)
-  --fetch               Use fetches like fetchFromGitHub in src attribute
-                        values. The fetch function and its parameters are
-                        determined from the local git work tree. sourceRoot
-                        attribute is set if needed and not overridden by
-                        --source-root. (default: False)
+  --fetch [{nixpkgs,flake-inputs}]
+                        Fetch package sources with Nix from the origin of
+                        local Git repositories. When set to "nixpkgs" (the
+                        default), use fetchers from nixpkgs (for example,
+                        fetchFromGitHub) in the src attribute of package
+                        derivations. When set to "flake-inputs" and used with
+                        --flake, use flake inputs to fetch package sources and
+                        pass them to the package derivation through the
+                        rosSources parameter. This allows fetching from
+                        private repositories. In all cases, the sourceRoot
+                        attribute of package derivations is set automatically
+                        when required, unless it is explicitly overridden with
+                        --source-root. (default: None)
   --use-per-package-src
                         When using --fetch, fetch only the package sub-
                         directory instead of the whole repo. For repos with

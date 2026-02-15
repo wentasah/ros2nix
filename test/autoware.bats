@@ -13,5 +13,5 @@ load common.bash
     vcs import src < repositories/autoware.repos
     cd ..
 
-    ros2nix --output-as-nix-pkg-name --fetch $(find -name package.xml|grep -v ament_cmake)
+    ros2nix --fetch --output-as-nix-pkg-name $(find -name package.xml|grep -v ament_cmake)
 }
