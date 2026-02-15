@@ -191,7 +191,7 @@ EOF
 @test "--fetch from github over https" {
     git clone "$BATS_TEST_DIRNAME/.." ros2nix
     git -C ros2nix remote set-url origin https://github.com/wentasah/ros2nix
-    ros2nix --output-as-nix-pkg-name --fetch $(find "ros2nix/test/ws/src" -name package.xml)
+    ros2nix --fetch --output-as-nix-pkg-name $(find "ros2nix/test/ws/src" -name package.xml)
     if $RUN_BUILD; then
         nix-build -A rosPackages.jazzy.ros-node
         run ./result/lib/ros_node/node
@@ -263,5 +263,35 @@ EOF
         run ./result/lib/ros_node/node
         assert_success
         assert_line --partial "hello world"
+    fi
+}
+
+@test "--fetch=flake-inputs" {
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix
+    git -C ros2nix remote set-url origin https://github.com/wentasah/ros2nix
+    ros2nix --output-as-nix-pkg-name --flake --fetch=flake-inputs $(find "ros2nix/test/ws/src" -name package.xml)
+    assert [ -f flake.nix ]
+    assert [ -f overlay.nix ]
+    # Check that package files reference rosSources
+    assert_file_contains ros-node.nix "rosSources.ros2nix"
+    assert_file_contains library.nix "rosSources.ros2nix"
+    if $RUN_BUILD; then
+        nix flake check path:"${PWD}"
+        nix build path:"${PWD}#ros-node"
+    fi
+}
+
+@test "--fetch=flake-inputs with two repositories" {
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix-1
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix-2
+    git -C ros2nix-1 remote set-url origin https://github.com/wentasah/ros2nix-1
+    git -C ros2nix-2 remote set-url origin https://github.com/wentasah/ros2nix-2
+    ros2nix --output-as-nix-pkg-name --flake --fetch=flake-inputs ros2nix-1/test/ws/src/library/package.xml ros2nix-2/test/ws/src/ros_node/package.xml
+    assert [ -f flake.nix ]
+    # Check that package files reference rosSources
+    assert_file_contains ros-node.nix "rosSources.ros2nix-2"
+    assert_file_contains library.nix "rosSources.ros2nix-1"
+    if $RUN_BUILD; then
+        nix flake check --override-input ros2nix-1 "$BATS_TEST_DIRNAME/.." --override-input ros2nix-2 "$BATS_TEST_DIRNAME/.." path:"${PWD}"
     fi
 }

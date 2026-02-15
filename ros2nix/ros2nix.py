@@ -135,20 +135,23 @@ def generate_overlay(expressions: dict[str, str], args):
         print("}", file=f)
 
 
-ros_distro_overlays_def = dedent(
-    """
-    applyDistroOverlay =
-      rosOverlay: rosPackages:
-      rosPackages
-      // builtins.mapAttrs (
-        rosDistro: rosPkgs: if rosPkgs ? overrideScope then rosPkgs.overrideScope rosOverlay else rosPkgs
-      ) rosPackages;
-    rosDistroOverlays = final: prev: {
-      # Apply the overlay to multiple ROS distributions
-      rosPackages = applyDistroOverlay (import ./overlay.nix) prev.rosPackages;
-    };
+def ros_distro_overlays_def(ros_sources: str = "") -> str:
+    return dedent(
+        """
+        applyDistroOverlay =
+          rosOverlay: rosPackages:
+          rosPackages
+          // builtins.mapAttrs (
+            rosDistro: rosPkgs: if rosPkgs ? overrideScope then rosPkgs.overrideScope rosOverlay else rosPkgs
+          ) rosPackages;
+        rosDistroOverlays = final: prev: {
+          # Apply the overlay to multiple ROS distributions
+          rosPackages = applyDistroOverlay (import ./overlay.nix) prev.rosPackages;
 """
-).strip()
+        + indent(ros_sources, "          ")
+        + """        };
+"""
+    ).strip()
 
 
 def flakeref_to_expr(flakeref) -> str:
@@ -175,11 +178,12 @@ def flakeref_to_expr(flakeref) -> str:
 def generate_default(args):
     nix_ros_overlay = flakeref_to_expr(args.nix_ros_overlay)
     with file_writer(f'{args.output_dir or "."}/default.nix', args.compare) as f:
+        # TODO: Handle --fetch=something (builtins or npins)
         f.write(f'''{{
   nix-ros-overlay ? {nix_ros_overlay},
 }}:
 let
-{indent(ros_distro_overlays_def, "  ")}
+{indent(ros_distro_overlays_def(), "  ")}
 in
 import nix-ros-overlay {{
   overlays = [ rosDistroOverlays ];
@@ -243,19 +247,43 @@ pkgs.mkShell {{
         f.write(shell_nix)
 
 
-def generate_flake(args):
+def generate_ros_input(repo: str, owner: str, revision: None | str) -> str:
+    return dedent(f'''
+        {repo} = {{
+          url = "github:{owner}/{repo}";
+          flake = false;
+        }};
+    ''').strip()
+
+
+def generate_flake(args, package_repos: dict[str, dict[str, str]]):
+    inputs = [
+        f'''nix-ros-overlay.url = "{args.nix_ros_overlay}";''',
+        f'''nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!''',
+    ] + [
+        generate_ros_input(repo, info["owner"], info["rev"])
+        for repo, info in sorted(package_repos.items())
+    ]
+    ros_sources = (
+        dedent(f'''
+          rosSources = {{
+            inherit (inputs) {' '.join(package_repos.keys())};
+          }};
+        ''').lstrip()
+        if len(package_repos) > 0
+        else ''
+    )
+
     with file_writer(f'{args.output_dir or "."}/flake.nix', args.compare) as f:
         f.write(
-            f'''
-{{
+            f'''{{
   inputs = {{
-    nix-ros-overlay.url = "{args.nix_ros_overlay}";
-    nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!
+{indent('\n'.join(inputs), "    ")}
   }};
-  outputs = {{ self, nix-ros-overlay, nixpkgs }}:
+  outputs = {{ self, nix-ros-overlay, nixpkgs, ... }}@inputs:
     nix-ros-overlay.inputs.flake-utils.lib.eachDefaultSystem (system:
       let
-{indent(ros_distro_overlays_def, "        ")}
+{indent(ros_distro_overlays_def(ros_sources), "        ")}
         pkgs = import nixpkgs {{
           inherit system;
           overlays = [
@@ -343,10 +371,21 @@ def ros2nix(args):
 
     parser.add_argument(
         "--fetch",
-        action="store_true",
-        help="Use fetches like fetchFromGitHub in src attribute values. "
-        "The fetch function and its parameters are determined from the local git work tree. "
-        "sourceRoot attribute is set if needed and not overridden by --source-root.",
+        nargs="?",
+        choices=["nixpkgs", "flake-inputs"],
+        const="nixpkgs",  # used if --fetch present without value
+        default=None,  # used if --fetch not present
+        help='''Fetch package sources with Nix from the origin of local Git repositories.
+
+        When set to "nixpkgs" (the default), use fetchers from nixpkgs (for example,
+        fetchFromGitHub) in the src attribute of package derivations.
+
+        When set to "flake-inputs" and used with --flake, use flake inputs to fetch package sources
+        and pass them to the package derivation through the rosSources parameter. This allows
+        fetching from private repositories.
+
+        In all cases, the sourceRoot attribute of package derivations is set automatically when
+        required, unless it is explicitly overridden with --source-root.''',
     )
 
     parser.add_argument(
@@ -515,6 +554,7 @@ def ros2nix(args):
     patch_filenames = set()
     our_pkg_names: set[str] = set()
     all_dependencies: set[str] = set()
+    source_repos: dict[str, dict[str, str]] = {}
 
     for source in args.source:
         try:
@@ -617,7 +657,18 @@ def ros2nix(args):
                     else ""
                 )
 
-                if match is not None:
+                if args.fetch == "flake-inputs":
+                    if match is not None:
+                        kwargs["src_param"] = "rosSources"
+                        kwargs["src_expr"] = f"rosSources.{match['repo']}"
+                        source_repos.update(
+                            {match["repo"]: {"owner": match["owner"], "rev": info["rev"]}}
+                        )  # makes sure that we don't have the same repo multiple times
+                    else:
+                        msg = f"Unsupported repository URL: {url}. Please, file an issue."
+                        err(msg)
+                        raise Exception(msg)
+                elif match is not None:
                     kwargs["src_param"] = "fetchFromGitHub"
                     kwargs["src_expr"] = strip_empty_lines(
                         dedent(f'''
@@ -643,7 +694,10 @@ def ros2nix(args):
 
                 if prefix:
                     # kwargs["src_expr"] = f'''let fullSrc = {kwargs["src_expr"]}; in "${{fullSrc}}/{prefix}"'''
-                    kwargs["source_root"] = f"${{src.name}}/{prefix}"
+                    if args.fetch == "flake-inputs":
+                        kwargs["source_root"] = f"source/{prefix}"
+                    else:
+                        kwargs["source_root"] = f"${{src.name}}/{prefix}"
 
                 if args.patches:
                     patches = (
@@ -765,7 +819,7 @@ def ros2nix(args):
         generate_shell(args, all_dependencies - our_pkg_names, our_cmd_line)
 
     if args.flake:
-        generate_flake(args)
+        generate_flake(args, source_repos)
     if args.default or (args.default is None and not args.flake):
         generate_default(args)
         # TODO generate also release.nix (for testing/CI)?
