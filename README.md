@@ -271,13 +271,15 @@ kernel of your host system.
 ```
 usage: ros2nix [-h] [--output OUTPUT | --output-as-ros-pkg-name |
                --output-as-nix-pkg-name | --output-as-pkg-dir]
-               [--output-dir OUTPUT_DIR] [--fetch] [--use-per-package-src]
+               [--output-dir OUTPUT_DIR] [--fetch] [--fetch-in-flake-inputs]
+               [--use-flake-input-rev] [--use-per-package-src]
                [--patches | --no-patches] [--distro DISTRO]
                [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
                [--no-cache] [--do-check] [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
-               [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
+               [--extra-native-build-inputs DEP1,DEP2,...]
+               [--exclude-deps DEP1,DEP2,...] [--flake]
                [--default | --no-default] [--overlay | --no-overlay]
                [--packages | --no-packages] [--shell | --no-shell]
                [--shell-only] [--nix-ros-overlay FLAKEREF] [--nixfmt]
@@ -314,6 +316,16 @@ options:
                         determined from the local git work tree. sourceRoot
                         attribute is set if needed and not overridden by
                         --source-root. (default: False)
+  --fetch-in-flake-inputs
+                        Determines the package structure from git, but the
+                        code is passed as a set of flake inputs. Requires
+                        --flake or --no-default. (default: False)
+  --use-flake-input-rev
+                        Hardcode the github commit of each repo in the flake
+                        inputs. The commit is determined by the git repo from
+                        which the package.xml was taken. Has only an effect if
+                        used together with --fetch-in-flake-inputs and --flake
+                        (default: False)
   --use-per-package-src
                         When using --fetch, fetch only the package sub-
                         directory instead of the whole repo. For repos with
@@ -352,12 +364,17 @@ options:
   --extra-native-build-inputs DEP1,DEP2,...
                         Additional dependencies to add to the generated Nix
                         expressions (default: [])
+  --exclude-deps DEP1,DEP2,...
+                        Dependencies to exclude from the generated Nix
+                        expressions (default: [])
   --flake               Generate top-level flake.nix instead of default.nix.
-                        Use with --fetch if some package.xml files are outside
-                        of the flake repo (default: False)
+                        Use with --fetch or --fetch-in-flake-inputs if some
+                        package.xml files are outside of the flake repo
+                        (default: False)
   --default, --no-default
-                        Enforce/suppress generation of default.nix (default:
-                        None)
+                        Enforce/suppress generation of default.nix. The
+                        default.nix will not be created when --fetch-in-flake-
+                        inputs is set. (default: None)
   --overlay, --no-overlay
                         Generate overlay.nix (default: True)
   --packages, --no-packages

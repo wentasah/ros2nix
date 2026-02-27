@@ -260,3 +260,51 @@ EOF
         assert_line --partial "hello world"
     fi
 }
+
+@test "--exclude-deps" {
+    ros2nix --output-as-nix-pkg-name --exclude-deps=ament-cmake $(find ws/src -name package.xml)
+    tail -n +2 library.nix > library.nix
+    assert_file_not_contains  ./library.nix zlib
+}
+
+@test "--exclude-deps with multiple dependencies" {
+    ros2nix --exclude-deps=zlib,library $(find ws/src -name package.xml)
+    tail -n +2 library.nix > library.nix
+    tail -n +2 ros-node.nix > ros-node.nix
+    assert_file_not_contains  ./library.nix zlib
+    assert_file_not_contains  ./ros-node.nix library
+}
+
+@test "--fetch-in-flake-inputs without --flake" {
+    git clone https://github.com/wentasah/ros2nix
+    # With --fetch-in-flake-inputs but without --flake or --no-default,
+    # default.nix should not be generated (it's automatically suppressed)
+    ros2nix --output-as-nix-pkg-name --fetch-in-flake-inputs $(find "ros2nix/test/ws/src" -name package.xml)
+    assert [ ! -f default.nix ]
+    assert [ ! -f flake.nix ]
+    assert [ -f overlay.nix ]
+}
+
+@test "--fetch-in-flake-inputs with --flake" {
+    git clone https://github.com/wentasah/ros2nix
+    ros2nix --output-as-nix-pkg-name --fetch-in-flake-inputs --flake $(find "ros2nix/test/ws/src" -name package.xml)
+    assert [ -f flake.nix ]
+    assert [ -f overlay.nix ]
+    # Check that overlay.nix has rosSources parameter
+    assert_file_contains overlay.nix "rosSources: final: prev:"
+    # Check that flake.nix has ros2nix input
+    assert_file_contains flake.nix "ros2nix = {"
+    assert_file_contains flake.nix 'url = "github:wentasah/ros2nix'
+    # Check that overlay is imported with rosSources in flake.nix
+    assert_file_contains flake.nix 'import ./overlay.nix rosSources'
+    # Check that package files reference rosSources
+    assert_file_contains ros-node.nix "rosSources.ros2nix"
+    assert_file_contains library.nix "rosSources.ros2nix"
+}
+
+@test "--use-flake-input-rev" {
+    git clone https://github.com/wentasah/ros2nix
+    ros2nix --output-as-nix-pkg-name --fetch-in-flake-inputs --flake --use-flake-input-rev $(find "ros2nix/test/ws/src" -name package.xml)
+    # Check that flake.nix has a specific revision in the URL
+    grep -E 'url = "github:wentasah/ros2nix/[0-9a-f]+"' flake.nix
+}
