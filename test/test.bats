@@ -210,7 +210,7 @@ EOF
     git commit -m 'test patch' -- test/ws/src/ros_node/src/node.cpp
     popd
     ros2nix --output-as-nix-pkg-name --fetch --patches $(find "ros2nix/test/ws/src" -name package.xml)
-    # remove original (abd patched) sources
+    # remove original (and patched) sources
     rm -rf ros2nix
     if $RUN_BUILD; then
         nix-build -A rosPackages.jazzy.ros-node
