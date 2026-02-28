@@ -648,7 +648,8 @@ def ros2nix(args):
                     git_cache[cache_key(url, prefix)] = {k: info[k] for k in ["rev", "sha256"]}
 
                 match = re.match(
-                    "https://github.com/(?P<owner>[^/]*)/(?P<repo>.*?)(.git|/.*)?$", url
+                    r"https://(?P<auth>.*:[^@]*@)?github\.com/(?P<owner>[^/]*)/(?P<repo>.*?)(?:\.git|/.*)?$",
+                    url,
                 )
                 sparse_checkout = (
                     f"""sparseCheckout = ["{prefix}"];
@@ -669,6 +670,11 @@ def ros2nix(args):
                         err(msg)
                         raise Exception(msg)
                 elif match is not None:
+                    if match["auth"] is not None:
+                        warn(
+                            f"Repository URL {url} contains authentication information, which is not supported by nixpkgs fetchers and will be ignored. "
+                            "Consider using --fetch=flake-inputs with configured access-tokens in nix.conf."
+                        )
                     kwargs["src_param"] = "fetchFromGitHub"
                     kwargs["src_expr"] = strip_empty_lines(
                         dedent(f'''

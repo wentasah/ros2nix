@@ -295,3 +295,12 @@ EOF
         nix flake check --override-input ros2nix-1 "$BATS_TEST_DIRNAME/.." --override-input ros2nix-2 "$BATS_TEST_DIRNAME/.." path:"${PWD}"
     fi
 }
+
+@test "--fetch=flake-inputs with access token" {
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix
+    git -C ros2nix remote set-url origin https://x-access-token:0123456789@github.com/wentasah/ros2nix
+    ros2nix --flake --fetch=flake-inputs --output-as-nix-pkg-name $(find "ros2nix/test/ws/src" -name package.xml)
+    if $RUN_BUILD; then
+        nix flake check path:"${PWD}"
+    fi
+}
