@@ -12,7 +12,7 @@ jobs:
     name: Flake check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v31
       - run: nix flake check
   tests:
@@ -23,6 +23,8 @@ jobs:
         test: [fast, test, autoware]
     steps:
       - uses: actions/checkout@v4
+      # PR actions run on detached head, but our tests need some head
+      - run: git switch --create test
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
