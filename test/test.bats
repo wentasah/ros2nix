@@ -189,7 +189,8 @@ EOF
 }
 
 @test "--fetch from github over https" {
-    git clone https://github.com/wentasah/ros2nix
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix
+    git -C ros2nix remote set-url origin https://github.com/wentasah/ros2nix
     ros2nix --output-as-nix-pkg-name --fetch $(find "ros2nix/test/ws/src" -name package.xml)
     if $RUN_BUILD; then
         nix-build -A rosPackages.jazzy.ros-node
@@ -204,7 +205,8 @@ EOF
 }
 
 @test "--fetch --patches" {
-    git clone https://github.com/wentasah/ros2nix
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix
+    git -C ros2nix remote set-url origin https://github.com/wentasah/ros2nix
     pushd ros2nix
     sed -i -e 's/hello world/hello patch/' test/ws/src/ros_node/src/node.cpp
     git commit -m 'test patch' -- test/ws/src/ros_node/src/node.cpp
@@ -222,7 +224,8 @@ EOF
 }
 
 @test "--fetch --patches with colliding changes" {
-    git clone https://github.com/wentasah/ros2nix
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix
+    git -C ros2nix remote set-url origin https://github.com/wentasah/ros2nix
     pushd ros2nix
     sed -i -e 's/hello world/hello patch/' test/ws/src/ros_node/src/node.cpp
     git commit -m 'test patch' -- test/ws/src/ros_node/src/node.cpp
@@ -235,7 +238,8 @@ EOF
 }
 
 @test "--fetch --patches with two changes, each for different package " {
-    git clone https://github.com/wentasah/ros2nix
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix
+    git -C ros2nix remote set-url origin https://github.com/wentasah/ros2nix
     pushd ros2nix
     sed -i -e 's/hello world/hello patch/' test/ws/src/ros_node/src/node.cpp
     git commit -m 'node patch' -- test/ws/src/ros_node/src/node.cpp
@@ -251,7 +255,8 @@ EOF
 }
 
 @test "--use-per-package-src" {
-    git clone https://github.com/wentasah/ros2nix
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix
+    git -C ros2nix remote set-url origin https://github.com/wentasah/ros2nix
     ros2nix --output-as-nix-pkg-name --fetch --use-per-package-src $(find "ros2nix/test/ws/src" -name package.xml)
     if $RUN_BUILD; then
         nix-build -A rosPackages.jazzy.ros-node
