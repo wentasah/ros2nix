@@ -85,6 +85,15 @@ def get_output_file_name(source: str, pkg: Package, args):
     return os.path.join(dir, fn)
 
 
+def nix_ident(s: str) -> str:
+    # Nix identifiers can contain letters, numbers, underscores, apostrophes and hyphens, but cannot
+    # start with a number, apostrophe or a hyphen.
+    s = re.sub(r"[^a-zA-Z0-9_'-]", "_", s)
+    if re.match(r"^[^a-zA-Z_]", s):
+        s = "_" + s
+    return s
+
+
 compare_failed = False
 
 
@@ -247,10 +256,10 @@ pkgs.mkShell {{
         f.write(shell_nix)
 
 
-def generate_ros_input(repo: str, owner: str, revision: None | str) -> str:
+def generate_ros_input(repo: str, info: dict[str, str]) -> str:
     return dedent(f'''
         {repo} = {{
-          url = "github:{owner}/{repo}";
+          url = "github:{info["owner"]}/{info["repo"]}";
           flake = false;
         }};
     ''').strip()
@@ -260,10 +269,7 @@ def generate_flake(args, package_repos: dict[str, dict[str, str]]):
     inputs = [
         f'''nix-ros-overlay.url = "{args.nix_ros_overlay}";''',
         f'''nixpkgs.follows = "nix-ros-overlay/nixpkgs";  # IMPORTANT!!!''',
-    ] + [
-        generate_ros_input(repo, info["owner"], info["rev"])
-        for repo, info in sorted(package_repos.items())
-    ]
+    ] + [generate_ros_input(ident, info) for ident, info in sorted(package_repos.items())]
     ros_sources = (
         dedent(f'''
           rosSources = {{
@@ -660,10 +666,17 @@ def ros2nix(args):
 
                 if args.fetch == "flake-inputs":
                     if match is not None:
+                        ident = nix_ident(match['repo'])
                         kwargs["src_param"] = "rosSources"
-                        kwargs["src_expr"] = f"rosSources.{match['repo']}"
+                        kwargs["src_expr"] = f"rosSources.{ident}"
                         source_repos.update(
-                            {match["repo"]: {"owner": match["owner"], "rev": info["rev"]}}
+                            {
+                                ident: {
+                                    "owner": match["owner"],
+                                    "repo": match["repo"],
+                                    "rev": info["rev"],
+                                }
+                            }
                         )  # makes sure that we don't have the same repo multiple times
                     else:
                         msg = f"Unsupported repository URL: {url}. Please, file an issue."
