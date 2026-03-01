@@ -304,3 +304,17 @@ EOF
         nix flake check path:"${PWD}"
     fi
 }
+
+@test "--fetch=flake-inputs with repo containing a dot" {
+    git clone "$BATS_TEST_DIRNAME/.." ros2nix
+    git -C ros2nix remote set-url origin https://github.com/wentasah/ros2nix.test
+    ros2nix --output-as-nix-pkg-name --flake --fetch=flake-inputs $(find "ros2nix/test/ws/src" -name package.xml)
+    assert [ -f flake.nix ]
+    # flake.nix contains original URL with dor
+    assert_file_contains flake.nix "wentasah/ros2nix.test"
+    # Packages refer to an identifier with the dot replaced by underscore
+    assert_file_contains ros-node.nix "rosSources.ros2nix_test"
+    if $RUN_BUILD; then
+        nix flake check --override-input ros2nix_test "$BATS_TEST_DIRNAME/.." path:"${PWD}"
+    fi
+}
