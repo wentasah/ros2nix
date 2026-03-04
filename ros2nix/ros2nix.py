@@ -348,6 +348,7 @@ class PackageOnlyAction(argparse.Action):
         namespace.overlay = False
         namespace.packages = True
 
+
 def ros2nix(args):
     parser = argparse.ArgumentParser(
         prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -406,7 +407,7 @@ def ros2nix(args):
         help="Format to use for the name in the resulting package expression. "
         "The string {distro} is replaced with the ros distro (set via --distro). "
         "Similarly, {package_name} is replaced with the name of the package.",
-        default="ros-{distro}-{package_name}"
+        default="ros-{distro}-{package_name}",
     )
 
     parser.add_argument(

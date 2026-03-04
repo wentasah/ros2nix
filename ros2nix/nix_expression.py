@@ -180,10 +180,7 @@ class NixExpression:
         if self.name_param:
             name = self.name_param
         else:
-            name = f'"{self.name_format.format(
-                distro=self.distro_name,
-                package_name=self.name
-            )}"'
+            name = f'"{self.name_format.format(distro=self.distro_name, package_name=self.name)}"'
 
         if self.version_param:
             version = self.version_param
