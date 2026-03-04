@@ -87,8 +87,11 @@ class NixExpression:
         description: str,
         licenses: Iterable[NixLicense],
         distro_name: str,
+        name_format: str,
         build_type: str,
         src_expr: str,
+        name_param: Optional[str] = None,
+        version_param: Optional[str] = None,
         build_inputs: Set[str] = set(),
         propagated_build_inputs: Set[str] = set(),
         check_inputs: Set[str] = set(),
@@ -107,9 +110,13 @@ class NixExpression:
         self.source_root = source_root
         self.do_check = do_check
 
+        self.name_param = name_param
+        self.version_param = version_param
+
         self.description = description
         self.licenses = licenses
         self.distro_name = distro_name
+        self.name_format = name_format
         self.build_type = build_type
 
         self.build_inputs = build_inputs
@@ -143,8 +150,15 @@ class NixExpression:
 
         args = ["lib", "buildRosPackage"]
 
+        if self.name_param:
+            args.append(self.name_param)
+
+        if self.version_param:
+            args.append(self.version_param)
+
         if self.src_param:
             args.append(self.src_param)
+
         src = indent(self.src_expr, "  ").strip()
 
         args.extend(
@@ -163,19 +177,49 @@ class NixExpression:
         )
         ret += '{ ' + ', '.join(args) + ' }:'
 
+        if self.name_param:
+            name = self.name_param
+        else:
+            name = f'"{self.name_format.format(
+                distro=self.distro_name,
+                package_name=self.name
+            )}"'
+
+        if self.version_param:
+            version = self.version_param
+        else:
+            version = f'"{self.version}"'
+
+        # To prevent issues with infinite recursion, use inherit if the name
+        # matches the passed param
+        if name == "pname":
+            name_arg = f"inherit pname"
+        else:
+            name_arg = f"pname = {name}"
+
+        if version == "version":
+            version_arg = f"inherit version"
+        else:
+            version_arg = f"version = {version}"
+
+        if src == "src":
+            src_arg = f"inherit src"
+        else:
+            src_arg = f"src = {src}"
+
         ret += dedent('''
         buildRosPackage rec {{
-          pname = "ros-{distro_name}-{name}";
-          version = "{version}";
+          {name_arg};
+          {version_arg};
 
-          src = {src};
+          {src_arg};
 
           buildType = "{build_type}";
         ''').format(
             distro_name=self.distro_name,
-            name=self.name,
-            version=self.version,
-            src=src,
+            name_arg=name_arg,
+            version_arg=version_arg,
+            src_arg=src_arg,
             build_type=self.build_type,
         )
         if self.patches:

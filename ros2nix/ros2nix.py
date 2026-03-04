@@ -341,6 +341,13 @@ class ShellOnlyAction(argparse.Action):
         namespace.packages = False
 
 
+class PackageOnlyAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        namespace.shell = False
+        namespace.default = False
+        namespace.overlay = False
+        namespace.packages = True
+
 def ros2nix(args):
     parser = argparse.ArgumentParser(
         prog="ros2nix", formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -392,6 +399,24 @@ def ros2nix(args):
 
         In all cases, the sourceRoot attribute of package derivations is set automatically when
         required, unless it is explicitly overridden with --source-root.''',
+    )
+
+    parser.add_argument(
+        "--name-format",
+        help="Format to use for the name in the resulting package expression. "
+        "The string {distro} is replaced with the ros distro (set via --distro). "
+        "Similarly, {package_name} is replaced with the name of the package.",
+        default="ros-{distro}-{package_name}"
+    )
+
+    parser.add_argument(
+        "--name-param",
+        help="Adds a parameter to the generated function and uses it as a value of the pname attribute",
+    )
+
+    parser.add_argument(
+        "--version-param",
+        help="Adds a parameter to the generated function and uses it as a value of the version attribute",
     )
 
     parser.add_argument(
@@ -462,7 +487,12 @@ def ros2nix(args):
         default=[],
         help="Additional dependencies to add to the generated Nix expressions",
     )
-
+    parser.add_argument(
+        "--package-only",
+        nargs=0,
+        action=PackageOnlyAction,
+        help="Generate only package.nix. This is a shortcut for --no-shell --no-default --no-overlay.",
+    )
     parser.add_argument(
         "--flake",
         action="store_true",
@@ -756,6 +786,12 @@ def ros2nix(args):
             if args.do_check:
                 kwargs["do_check"] = True
 
+            if args.name_param:
+                kwargs["name_param"] = args.name_param
+
+            if args.version_param:
+                kwargs["version_param"] = args.version_param
+
             derivation = NixExpression(
                 name=NixPackage.normalize_name(pkg.name),
                 version=pkg.version,
@@ -763,6 +799,7 @@ def ros2nix(args):
                 licenses=map(NixLicense, pkg.licenses),
                 distro_name=args.distro,
                 build_type=pkg.get_build_type(),
+                name_format=args.name_format,
                 build_inputs=build_inputs | set(args.extra_build_inputs),
                 propagated_build_inputs=propagated_build_inputs
                 | set(args.extra_propagated_build_inputs),
