@@ -117,11 +117,11 @@
     "rosdistro": {
       "flake": false,
       "locked": {
-        "lastModified": 1773440743,
-        "narHash": "sha256-CHpPuio/jiW/AafclWStL5a0qmp7mL6PgVMlaxrmmMs=",
+        "lastModified": 1773823508,
+        "narHash": "sha256-HfEAFIUKiieHrxzS7re0/1/x6QYOmlYDenpik2BcpnI=",
         "owner": "ros",
         "repo": "rosdistro",
-        "rev": "2648854849715000ef247b4ed96c4c47a6ecc668",
+        "rev": "783b15a4d79d873ae8883e17a2fe961da8184ae9",
         "type": "github"
       },
       "original": {
