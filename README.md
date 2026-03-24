@@ -272,14 +272,15 @@ kernel of your host system.
 usage: ros2nix [-h] [--output OUTPUT | --output-as-ros-pkg-name |
                --output-as-nix-pkg-name | --output-as-pkg-dir]
                [--output-dir OUTPUT_DIR] [--fetch [{nixpkgs,flake-inputs}]]
-               [--use-per-package-src] [--patches | --no-patches]
-               [--distro DISTRO] [--src-param SRC_PARAM]
-               [--source-root SOURCE_ROOT] [--no-cache] [--do-check]
-               [--extra-build-inputs DEP1,DEP2,...]
+               [--name-format NAME_FORMAT] [--name-param NAME_PARAM]
+               [--version-param VERSION_PARAM] [--use-per-package-src]
+               [--patches | --no-patches] [--distro DISTRO]
+               [--src-param SRC_PARAM] [--source-root SOURCE_ROOT]
+               [--no-cache] [--do-check] [--extra-build-inputs DEP1,DEP2,...]
                [--extra-propagated-build-inputs DEP1,DEP2,...]
                [--extra-check-inputs DEP1,DEP2,...]
-               [--extra-native-build-inputs DEP1,DEP2,...] [--flake]
-               [--default | --no-default] [--overlay | --no-overlay]
+               [--extra-native-build-inputs DEP1,DEP2,...] [--package-only]
+               [--flake] [--default | --no-default] [--overlay | --no-overlay]
                [--packages | --no-packages] [--shell | --no-shell]
                [--shell-only] [--nix-ros-overlay FLAKEREF] [--nixfmt]
                [--compare] [--copyright-holder COPYRIGHT_HOLDER]
@@ -323,6 +324,18 @@ options:
                         attribute of package derivations is set automatically
                         when required, unless it is explicitly overridden with
                         --source-root. (default: None)
+  --name-format NAME_FORMAT
+                        Format to use for the name in the resulting package
+                        expression. The string {distro} is replaced with the
+                        ros distro (set via --distro). Similarly,
+                        {package_name} is replaced with the name of the
+                        package. (default: ros-{distro}-{package_name})
+  --name-param NAME_PARAM
+                        Adds a parameter to the generated function and uses it
+                        as a value of the pname attribute (default: None)
+  --version-param VERSION_PARAM
+                        Adds a parameter to the generated function and uses it
+                        as a value of the version attribute (default: None)
   --use-per-package-src
                         When using --fetch, fetch only the package sub-
                         directory instead of the whole repo. For repos with
@@ -361,6 +374,8 @@ options:
   --extra-native-build-inputs DEP1,DEP2,...
                         Additional dependencies to add to the generated Nix
                         expressions (default: [])
+  --package-only        Generate only package.nix. This is a shortcut for
+                        --no-shell --no-default --no-overlay. (default: None)
   --flake               Generate top-level flake.nix instead of default.nix.
                         Use with --fetch if some package.xml files are outside
                         of the flake repo (default: False)
