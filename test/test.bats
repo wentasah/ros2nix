@@ -64,7 +64,7 @@ fi
 @test "generate just package.nix with --package-only" {
     cd ws
     ros2nix --distro=jazzy --package-only $(find src -name package.xml)
-    assert [ $(find . -name '*.nix' -exec basename {} \; | uniq) = "package.nix" ]
+    assert [ "$(find . -name '*.nix' -exec basename {} \; | uniq)" = "package.nix" ]
 }
 
 @test "--package-only with --output-dir" {
