@@ -61,6 +61,20 @@ fi
     assert [ -f out/shell.nix ]
 }
 
+@test "generate just package.nix with --package-only" {
+    cd ws
+    ros2nix --distro=jazzy --package-only $(find src -name package.xml)
+    assert [ "$(find . -name '*.nix' -exec basename {} \; | uniq)" = "package.nix" ]
+}
+
+@test "--package-only with --output-dir" {
+    cd ws
+    mkdir -p out
+    ros2nix --distro=jazzy --package-only $(find src -name package.xml) --output-dir=out --output-as-pkg-dir
+    assert [ -f out/ros-node/package.nix ]
+    assert [ -f out/library/package.nix ]
+}
+
 @test "nix-shell for local workspace with additional ROS package" {
     ros2nix --distro=jazzy $(find ws/src -name package.xml)
     nix-shell --arg withPackages 'p: with p; [ compressed-image-transport ]' \
@@ -317,4 +331,73 @@ EOF
     if $RUN_BUILD; then
         nix flake check --override-input ros2nix_test "$BATS_TEST_DIRNAME/.." path:"${PWD}"
     fi
+}
+
+@test "--src-param" {
+    cd ws/src/library
+
+    ros2nix --src-param testing-src $(find . -name package.xml)
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix "src = testing-src;"
+}
+
+@test "--src-param with inherit" {
+    cd ws/src/library
+
+    ros2nix --src-param src $(find . -name package.xml)
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix "inherit src;"
+}
+
+@test "--name-param" {
+    cd ws/src/library
+
+    ros2nix --name-param testing-name $(find . -name package.xml)
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix "name = testing-name;"
+}
+
+@test "--name-param with inherit" {
+    cd ws/src/library
+
+    ros2nix --name-param pname $(find . -name package.xml)
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix "inherit pname;"
+}
+
+@test "--version-param" {
+    cd ws/src/library
+
+    ros2nix --version-param testing-version $(find . -name package.xml)
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix "version = testing-version;"
+}
+
+@test "--version-param with inherit" {
+    cd ws/src/library
+
+    ros2nix --version-param version $(find . -name package.xml)
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix "inherit version;"
+}
+
+@test "--name-format" {
+    cd ws/src/library
+
+    ros2nix --distro=jazzy --name-format "non-conformant-name-{package_name}-{distro}" $(find . -name package.xml)
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix "name = \"non-conformant-name-library-jazzy\";"
+}
+
+@test "--name-format unknown substitution fail" {
+    cd ws/src/library
+
+    run ! ros2nix --distro=jazzy --name-format "{unknown_sub}-{package_name}-{distro}" $(find . -name package.xml)
 }
