@@ -75,7 +75,7 @@
           propagatedBuildInputs = with pkgs; [
             git
             nix-prefetch-git
-            nixfmt-rfc-style
+            nixfmt
             superflore
             python3Packages.argcomplete
           ];
