@@ -84,6 +84,7 @@
             "--set ROSDEP_SOURCE_PATH ${rosdistro}/rosdep/sources.list.d"
             "--set ROSDISTRO_INDEX_URL file://${rosdistro}/index-v4.yaml"
             "--set ROS_OS_OVERRIDE nixos"
+            "--unset LD_LIBRARY_PATH" # LD_LIBRARY_PATH can cause Python to segfault
           ];
           postInstall = ''
             installShellCompletion --cmd ros2nix \
