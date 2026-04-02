@@ -177,48 +177,20 @@ class NixExpression:
         )
         ret += '{ ' + ', '.join(args) + ' }:'
 
-        if self.name_param:
-            name = self.name_param
-        else:
-            name = f'"{self.name_format.format(distro=self.distro_name, package_name=self.name)}"'
-
-        if self.version_param:
-            version = self.version_param
-        else:
-            version = f'"{self.version}"'
-
         # To prevent issues with infinite recursion, use inherit if the name
         # matches the passed param
-        if name == "pname":
-            name_arg = f"inherit pname"
-        else:
-            name_arg = f"pname = {name}"
+        def assign_attr(name, val):
+            return f"{name} = {val}" if name != val else f"inherit {name}"
 
-        if version == "version":
-            version_arg = f"inherit version"
-        else:
-            version_arg = f"version = {version}"
-
-        if src == "src":
-            src_arg = f"inherit src"
-        else:
-            src_arg = f"src = {src}"
-
-        ret += dedent('''
+        ret += dedent(f'''
         buildRosPackage rec {{
-          {name_arg};
-          {version_arg};
+          {assign_attr("pname", self.name_param or f'"{self.name_format.format(distro=self.distro_name, package_name=self.name)}"')};
+          {assign_attr("version", self.version_param or f'"{self.version}"')};
 
-          {src_arg};
+          {assign_attr("src", src)};
 
-          buildType = "{build_type}";
-        ''').format(
-            distro_name=self.distro_name,
-            name_arg=name_arg,
-            version_arg=version_arg,
-            src_arg=src_arg,
-            build_type=self.build_type,
-        )
+          buildType = "{self.build_type}";
+        ''')
         if self.patches:
             ret += f"""  patches = [\n    {"\n    ".join(self.patches)}\n  ];\n"""
 
