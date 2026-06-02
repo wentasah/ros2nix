@@ -4,11 +4,15 @@ set -euo pipefail
 
 pr_body=${1:-/tmp/.body}
 
+filter_nixos() {
+    yq 'with_entries(select(.value.nixos != null) | .value = .value.nixos)' "$1"/rosdep/{base,python,ruby}.yaml
+}
+
 nix build .#rosdistro --out-link /tmp/rosdistro-old
 nix flake update rosdistro
 nix build .#rosdistro --out-link /tmp/rosdistro-new
-grep -Rh nixos: /tmp/rosdistro-old > /tmp/rosdistro-old.txt
-grep -Rh nixos: /tmp/rosdistro-new > /tmp/rosdistro-new.txt
+filter_nixos /tmp/rosdistro-old > /tmp/rosdistro-old.txt
+filter_nixos /tmp/rosdistro-new > /tmp/rosdistro-new.txt
 git reset --hard
 if ! git diff -U0 /tmp/rosdistro-old.txt /tmp/rosdistro-new.txt > /tmp/rosdistro-diff; then
     # redo update with nice commit message
