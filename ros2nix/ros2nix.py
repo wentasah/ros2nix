@@ -328,7 +328,9 @@ def strip_empty_lines(text: str) -> str:
 
 
 def nixfmt(input: str) -> str:
-    nixfmt = subprocess.Popen(["nixfmt"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    nixfmt = subprocess.Popen(
+        ["nixfmt", "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True
+    )
     output, _ = nixfmt.communicate(input=input)
     return output
 
