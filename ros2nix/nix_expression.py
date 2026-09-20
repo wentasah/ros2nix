@@ -75,6 +75,7 @@ class NixLicense:
         'GPL-3': 'gpl3',
         'GPL-3.0': "gpl3",
         'GPL-3.0-only': 'gpl3Only',
+        'GPL-3.0-or-later': 'gpl3Plus',
         'GPLv2-license': 'gpl2Only',
         'HPND': 'hpnd',
         'LGPL-2': 'lgpl2',
