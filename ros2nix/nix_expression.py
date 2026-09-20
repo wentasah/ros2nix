@@ -50,6 +50,7 @@ class NixLicense:
         'Apache-Licence-2.0': 'asl20',
         'Apache-license-2.0': 'asl20',
         'BSD': 'bsdOriginal',
+        'BSD-1-Clause': 'bsd1',
         'BSD-2': 'bsd2',
         'BSD-2-Clause': 'bsd2',
         'BSD-2-clause': 'bsd2',
@@ -60,6 +61,7 @@ class NixLicense:
         'BSD-License-2.0': 'bsd3',  # In teleop_twist_keyboard, BSD-License-2.0 is almost exactly bsd3. The only difference is use of "copyright owner" instead of "copyright holder".
         'BSL-1.0': 'boost',
         'Boost-1.0': 'boost',
+        'CC-BY-3.0': 'cc-by-30',
         'CC-BY-NC-ND-4.0': 'cc-by-nc-nd-40',
         'CC-BY-NC-SA-3.0': 'cc-by-nc-sa-30',
         'CC-BY-NC-SA-4.0': 'cc-by-nc-sa-40',
@@ -85,6 +87,7 @@ class NixLicense:
         'LGPL-3': 'lgpl3',
         'LGPL-3.0': 'lgpl3Only',
         'LGPL-3.0-only': 'lgpl3Only',
+        'LGPL-3.0-or-later': 'lgpl3Plus',
         'LGPL-v3': 'lgpl3Only',
         'MIT': 'mit',
         'MIT-0': 'mit0',
