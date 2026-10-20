@@ -107,7 +107,7 @@
                 p.bats-assert
                 p.bats-file
             ]))
-            pkgs.vcstool
+            pkgs.vcs2l
             pkgs.python3Packages.flake8
             pkgs.python3Packages.flake8-bugbear
             pkgs.python3Packages.isort
