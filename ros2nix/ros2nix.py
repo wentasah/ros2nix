@@ -382,7 +382,8 @@ def ros2nix(args):
         "--output-dir",
         help="Directory to generate output files in. Must be accompanied by one of --output-as-*. "
         "By default, package files are stored next to their corresponding package.xml, "
-        "top-level files like overlay.nix in the current directory.",
+        "top-level files like overlay.nix in the current directory. "
+        "Can also be set via the ROS2NIX_OUTPUT_DIR environment variable.",
     )
 
     parser.add_argument(
@@ -557,6 +558,9 @@ def ros2nix(args):
 
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
+
+    if args.output_dir is None:
+        args.output_dir = os.environ.get("ROS2NIX_OUTPUT_DIR") or None
 
     if args.output_dir is None and (
         args.output_as_nix_pkg_name or args.output_as_ros_pkg_name or args.output_as_pkg_dir
