@@ -419,3 +419,27 @@ EOF
 
     assert_file_contains package.nix 'sourceRoot = "source/library";'
 }
+
+# shellcheck disable=SC2016
+@test "--source-root with {dir_name}" {
+    cd ws
+
+    ros2nix --output-as-nix-pkg-name --src-param workspaceSrc --source-root '${src.name}/{dir_name}' $(find . -name package.xml)
+
+    assert_file_contains library.nix 'sourceRoot = "\${src.name}/src/library";'
+    assert_file_contains ros-node.nix 'sourceRoot = "\${src.name}/src/ros_node";'
+
+    # Add workspaceSrc attribute to the generated overlay.nix
+    sed -i -e '/ros-node =/ a\workspaceSrc = final.lib.cleanSource ./.;' overlay.nix
+
+    nix-build -A rosPackages.rolling.ros-node -A rosPackages.rolling.library
+}
+
+@test "--source-root with {dir_name} for package in the current directory" {
+    cd ws/src/library
+
+    ros2nix --source-root 'source/{dir_name}' package.xml
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix 'sourceRoot = "source/.";'
+}

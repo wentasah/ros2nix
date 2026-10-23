@@ -449,7 +449,8 @@ def ros2nix(args):
     parser.add_argument(
         "--source-root",
         help="Set sourceRoot attribute value in the generated Nix expression. "
-        "Substring '{package_name}' gets replaced with the package name.",
+        "Substring '{package_name}' gets replaced with the package name and "
+        "'{dir_name}' with the directory containing package.xml (relative to the current directory).",
     )
     parser.add_argument(
         "--no-cache",
@@ -784,7 +785,9 @@ def ros2nix(args):
                     )
 
             if args.source_root:
-                kwargs["source_root"] = args.source_root.replace('{package_name}', pkg.name)
+                kwargs["source_root"] = args.source_root.replace(
+                    '{package_name}', pkg.name
+                ).replace('{dir_name}', os.path.relpath(os.path.dirname(source) or "."))
 
             if args.do_check:
                 kwargs["do_check"] = True

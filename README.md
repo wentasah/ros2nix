@@ -358,7 +358,9 @@ options:
   --source-root SOURCE_ROOT
                         Set sourceRoot attribute value in the generated Nix
                         expression. Substring '{package_name}' gets replaced
-                        with the package name. (default: None)
+                        with the package name and '{dir_name}' with the
+                        directory containing package.xml (relative to the
+                        current directory). (default: None)
   --no-cache            Don't use cache of git checkout sha265 hashes across
                         generation runs. (default: False)
   --do-check            Set doCheck attribute to true (default: False)
