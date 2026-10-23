@@ -162,6 +162,13 @@ EOF
     nix-build ./nix -A rosPackages.jazzy.ros-node
 }
 
+@test "--output-dir via ROS2NIX_OUTPUT_DIR" {
+    ROS2NIX_OUTPUT_DIR=nix ros2nix --output-as-nix-pkg-name $(find ws/src -name package.xml)
+    assert [ -f nix/ros-node.nix ]
+    assert [ -f nix/library.nix ]
+    nix-build ./nix -A rosPackages.jazzy.ros-node
+}
+
 @test "--output-as-ros-pkg-name" {
     ros2nix --output-as-ros-pkg-name $(find ws/src -name package.xml)
     assert [ -f ros_node.nix ]

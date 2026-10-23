@@ -310,7 +310,9 @@ options:
                         accompanied by one of --output-as-*. By default,
                         package files are stored next to their corresponding
                         package.xml, top-level files like overlay.nix in the
-                        current directory. (default: None)
+                        current directory. Can also be set via the
+                        ROS2NIX_OUTPUT_DIR environment variable. (default:
+                        None)
   --fetch [{nixpkgs,flake-inputs}]
                         Fetch package sources with Nix from the origin of
                         local Git repositories. When set to "nixpkgs" (the
