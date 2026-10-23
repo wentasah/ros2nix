@@ -401,3 +401,21 @@ EOF
 
     run ! ros2nix --distro=jazzy --name-format "{unknown_sub}-{package_name}-{distro}" $(find . -name package.xml)
 }
+
+@test "--source-root" {
+    cd ws/src/library
+
+    ros2nix --source-root 'source/subdir' $(find . -name package.xml)
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix 'sourceRoot = "source/subdir";'
+}
+
+@test "--source-root with {package_name}" {
+    cd ws/src/library
+
+    ros2nix --source-root 'source/{package_name}' $(find . -name package.xml)
+    assert [ -f package.nix ]
+
+    assert_file_contains package.nix 'sourceRoot = "source/library";'
+}
