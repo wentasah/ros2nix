@@ -132,16 +132,19 @@ def file_writer(path: str, compare: bool):
 
 
 def generate_overlay(expressions: dict[str, str], args):
+    overlay_nix = "final: prev:\n{\n"
+    for pkg in sorted(expressions):
+        expr = (
+            expressions[pkg]
+            if args.output_dir is None
+            else os.path.relpath(expressions[pkg], args.output_dir)
+        )
+        overlay_nix += f"  {pkg} = final.callPackage ./{expr} {{}};\n"
+    overlay_nix += "}\n"
+    if args.nixfmt:
+        overlay_nix = nixfmt(overlay_nix)
     with file_writer(f'{args.output_dir or "."}/overlay.nix', args.compare) as f:
-        print("final: prev:\n{", file=f)
-        for pkg in sorted(expressions):
-            expr = (
-                expressions[pkg]
-                if args.output_dir is None
-                else os.path.relpath(expressions[pkg], args.output_dir)
-            )
-            print(f"  {pkg} = final.callPackage ./{expr} {{}};", file=f)
-        print("}", file=f)
+        f.write(overlay_nix)
 
 
 def ros_distro_overlays_def(ros_sources: str = "") -> str:
@@ -186,9 +189,8 @@ def flakeref_to_expr(flakeref) -> str:
 
 def generate_default(args):
     nix_ros_overlay = flakeref_to_expr(args.nix_ros_overlay)
-    with file_writer(f'{args.output_dir or "."}/default.nix', args.compare) as f:
-        # TODO: Handle --fetch=something (builtins or npins)
-        f.write(f'''{{
+    # TODO: Handle --fetch=something (builtins or npins)
+    default_nix = f'''{{
   nix-ros-overlay ? {nix_ros_overlay},
 }}:
 let
@@ -197,7 +199,11 @@ in
 import nix-ros-overlay {{
   overlays = [ rosDistroOverlays ];
 }}
-''')
+'''
+    if args.nixfmt:
+        default_nix = nixfmt(default_nix)
+    with file_writer(f'{args.output_dir or "."}/default.nix', args.compare) as f:
+        f.write(default_nix)
 
 
 def generate_shell(args, packages: set[str], our_cmd_line: str):
@@ -280,9 +286,8 @@ def generate_flake(args, package_repos: dict[str, dict[str, str]]):
         else ''
     )
 
-    with file_writer(f'{args.output_dir or "."}/flake.nix', args.compare) as f:
-        f.write(
-            f'''{{
+    flake_nix = (
+        f'''{{
   inputs = {{
 {indent('\n'.join(inputs), "    ")}
   }};
@@ -299,7 +304,7 @@ def generate_flake(args, package_repos: dict[str, dict[str, str]]):
         }};
         rosDistro = "{args.distro}";
 '''
-            + '''
+        + '''
       in {
         legacyPackages = pkgs.rosPackages;
         packages = builtins.intersectAttrs (import ./overlay.nix null null) pkgs.rosPackages.${rosDistro};
@@ -316,7 +321,11 @@ def generate_flake(args, package_repos: dict[str, dict[str, str]]):
   };
 }
 '''
-        )
+    )
+    if args.nixfmt:
+        flake_nix = nixfmt(flake_nix)
+    with file_writer(f'{args.output_dir or "."}/flake.nix', args.compare) as f:
+        f.write(flake_nix)
 
 
 def comma_separated(arg: str) -> list[str]:

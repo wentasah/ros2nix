@@ -169,6 +169,17 @@ EOF
     nix-build ./nix -A rosPackages.jazzy.ros-node
 }
 
+@test "--nixfmt" {
+    ros2nix --nixfmt $(find ws/src -name package.xml)
+    nixfmt --check default.nix overlay.nix shell.nix ws/src/library/package.nix ws/src/ros_node/package.nix
+    nix-build -A rosPackages.jazzy.ros-node
+}
+
+@test "--nixfmt with --flake" {
+    ros2nix --nixfmt --flake $(find ws/src -name package.xml)
+    nixfmt --check flake.nix overlay.nix shell.nix ws/src/library/package.nix ws/src/ros_node/package.nix
+}
+
 @test "--output-as-ros-pkg-name" {
     ros2nix --output-as-ros-pkg-name $(find ws/src -name package.xml)
     assert [ -f ros_node.nix ]
