@@ -28,7 +28,7 @@ to nixpkgs attributes, so that you don't have to be concerned with it.
 
 - With Nix flakes experimental feature:
   ```sh
-  nix profile install github:wentasah/ros2nix
+  nix profile add github:wentasah/ros2nix
   ```
   or try it out without installation:
   ```sh
